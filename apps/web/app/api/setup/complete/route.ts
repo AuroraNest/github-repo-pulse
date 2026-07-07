@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
 import { attachRuntimeSetupState } from "../../../../lib/runtime-setup-state";
+import { requireSession } from "../../../../lib/session";
 
 const completeSchema = z.object({
   selectedRepositoryIds: z.array(z.union([z.string(), z.number()])).min(1),
@@ -13,6 +14,9 @@ const completeSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const session = requireSession(request);
+  if (!session.ok) return session.response;
+
   const body = completeSchema.safeParse(await request.json());
   if (!body.success) {
     return jsonError("VALIDATION_ERROR", "Setup payload is invalid.", 400, body.error.flatten());

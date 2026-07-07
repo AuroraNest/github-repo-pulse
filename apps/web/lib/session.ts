@@ -1,16 +1,16 @@
 import { readRuntimeConfig } from "@repopulse/core";
 import { NextRequest, NextResponse } from "next/server";
 
-const cookieName = "repopulse_session";
+export const sessionCookieName = "repopulse_session";
 
 export function getSessionUser(request: NextRequest) {
-  const session = request.cookies.get(cookieName)?.value;
+  const session = request.cookies.get(sessionCookieName)?.value;
   if (!session) {
     return null;
   }
 
   const config = readRuntimeConfig();
-  return session === sessionValue(config.sessionSecret) ? { email: config.adminEmail } : null;
+  return session === getSessionCookieValue(config.sessionSecret) ? { email: config.adminEmail } : null;
 }
 
 export function requireSession(request: NextRequest) {
@@ -24,7 +24,7 @@ export function requireSession(request: NextRequest) {
 
 export function attachSession(response: NextResponse) {
   const config = readRuntimeConfig();
-  response.cookies.set(cookieName, sessionValue(config.sessionSecret), {
+  response.cookies.set(sessionCookieName, getSessionCookieValue(config.sessionSecret), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -35,7 +35,7 @@ export function attachSession(response: NextResponse) {
 }
 
 export function clearSession(response: NextResponse) {
-  response.cookies.set(cookieName, "", {
+  response.cookies.set(sessionCookieName, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -45,6 +45,20 @@ export function clearSession(response: NextResponse) {
   return response;
 }
 
-function sessionValue(secret: string) {
-  return Buffer.from(`single-user:${secret}`).toString("base64url");
+export function getSessionCookieValue(secret: string) {
+  return base64UrlEncode(`single-user:${secret}`);
+}
+
+function base64UrlEncode(value: string) {
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(value).toString("base64url");
+  }
+
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }

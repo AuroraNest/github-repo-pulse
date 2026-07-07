@@ -1,8 +1,12 @@
 import { NextRequest } from "next/server";
 import { jsonOk, parseSearchParams } from "../../../../lib/api";
 import { getRepositoryCollection, githubDataSourcePayload } from "../../../../lib/data-source";
+import { requireSession } from "../../../../lib/session";
 
 export async function GET(request: NextRequest) {
+  const session = requireSession(request);
+  if (!session.ok) return session.response;
+
   const params = parseSearchParams(request);
   const search = (params.get("search") || "").toLowerCase();
   const visibility = params.get("visibility") || "all";
