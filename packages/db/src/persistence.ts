@@ -79,6 +79,32 @@ type ReportRow = RowDataPacket & {
   created_at: Date | string;
 };
 
+type SyncRunRow = RowDataPacket & {
+  id: string;
+  trigger_source: "schedule" | "manual" | "setup" | "api";
+  status: "running" | "success" | "partial_failed" | "failed" | "cancelled";
+  started_at: Date | string;
+  finished_at: Date | string | null;
+  total_repositories: number;
+  success_count: number;
+  failed_count: number;
+  error_message: string | null;
+};
+
+type SyncRunItemRow = RowDataPacket & {
+  id: string;
+  sync_run_id: string;
+  repository_id: string;
+  status: "success" | "partial_failed" | "failed";
+  started_at: Date | string | null;
+  finished_at: Date | string | null;
+  collected_repo: number | boolean;
+  collected_traffic: number | boolean;
+  collected_releases: number | boolean;
+  error_code: string | null;
+  error_message: string | null;
+};
+
 export type PersistedReport = {
   id: string;
   type: "daily" | "weekly" | "monthly";
@@ -88,6 +114,32 @@ export type PersistedReport = {
   data: unknown;
   markdown: string;
   aiGenerated: boolean;
+};
+
+export type PersistedSyncRunItem = {
+  id: string;
+  syncRunId: string;
+  repositoryId: string;
+  status: "success" | "partial_failed" | "failed";
+  startedAt: string | null;
+  finishedAt: string | null;
+  collectedRepo: boolean;
+  collectedTraffic: boolean;
+  collectedReleases: boolean;
+  errorCode: string | null;
+  errorMessage: string | null;
+};
+
+export type PersistedSyncRun = {
+  id: string;
+  trigger: "schedule" | "manual" | "setup" | "api";
+  status: "running" | "success" | "partial_failed" | "failed" | "cancelled";
+  startedAt: string;
+  finishedAt: string | null;
+  totalRepositories: number;
+  successCount: number;
+  failedCount: number;
+  errorMessage: string | null;
 };
 
 export function defaultAppSettings(): AppSettings {
@@ -359,6 +411,136 @@ export async function saveReport(input: {
   }
 }
 
+export async function readSyncRuns(limit = 20): Promise<PersistedSyncRun[]> {
+  const pool = await createPool();
+  try {
+    const [rows] = await pool.query<SyncRunRow[]>(
+      `SELECT id, trigger_source, status, started_at, finished_at, total_repositories, success_count, failed_count, error_message
+       FROM sync_runs
+       ORDER BY started_at DESC
+       LIMIT ?`,
+      [limit]
+    );
+    return rows.map(toPersistedSyncRun);
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function readSyncRunWithItems(id: string): Promise<{ run: PersistedSyncRun; items: PersistedSyncRunItem[] } | null> {
+  const pool = await createPool();
+  try {
+    const [runRows] = await pool.query<SyncRunRow[]>(
+      `SELECT id, trigger_source, status, started_at, finished_at, total_repositories, success_count, failed_count, error_message
+       FROM sync_runs
+       WHERE id = ?
+       LIMIT 1`,
+      [id]
+    );
+    const runRow = runRows[0];
+    if (!runRow) return null;
+
+    const [itemRows] = await pool.query<SyncRunItemRow[]>(
+      `SELECT id, sync_run_id, repository_id, status, started_at, finished_at, collected_repo, collected_traffic, collected_releases, error_code, error_message
+       FROM sync_run_items
+       WHERE sync_run_id = ?
+       ORDER BY created_at ASC`,
+      [id]
+    );
+
+    return { run: toPersistedSyncRun(runRow), items: itemRows.map(toPersistedSyncRunItem) };
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function saveSyncRun(input: {
+  id: string;
+  trigger: "schedule" | "manual" | "setup" | "api";
+  status: "success" | "partial_failed" | "failed";
+  startedAt: string;
+  finishedAt: string;
+  totalRepositories: number;
+  successCount: number;
+  failedCount: number;
+  errorMessage?: string;
+  items: Array<{
+    id: string;
+    repositoryId: string;
+    status: "success" | "partial_failed" | "failed";
+    startedAt: string;
+    finishedAt: string;
+    collectedRepo: boolean;
+    collectedTraffic: boolean;
+    collectedReleases: boolean;
+    errorCode?: string;
+    errorMessage?: string;
+  }>;
+}) {
+  const pool = await createPool();
+  try {
+    await pool.execute<ResultSetHeader>(
+      `INSERT INTO sync_runs
+         (id, trigger_source, status, started_at, finished_at, duration_ms, total_repositories, success_count, failed_count, error_message)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         status = VALUES(status),
+         finished_at = VALUES(finished_at),
+         duration_ms = VALUES(duration_ms),
+         total_repositories = VALUES(total_repositories),
+         success_count = VALUES(success_count),
+         failed_count = VALUES(failed_count),
+         error_message = VALUES(error_message)`,
+      [
+        input.id,
+        input.trigger,
+        input.status,
+        toMysqlDateTime(input.startedAt),
+        toMysqlDateTime(input.finishedAt),
+        Math.max(0, new Date(input.finishedAt).getTime() - new Date(input.startedAt).getTime()),
+        input.totalRepositories,
+        input.successCount,
+        input.failedCount,
+        input.errorMessage || null
+      ]
+    );
+
+    for (const item of input.items) {
+      await pool.execute<ResultSetHeader>(
+        `INSERT INTO sync_run_items
+           (id, sync_run_id, repository_id, status, started_at, finished_at, duration_ms,
+            collected_repo, collected_traffic, collected_releases, error_code, error_message)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           status = VALUES(status),
+           finished_at = VALUES(finished_at),
+           duration_ms = VALUES(duration_ms),
+           collected_repo = VALUES(collected_repo),
+           collected_traffic = VALUES(collected_traffic),
+           collected_releases = VALUES(collected_releases),
+           error_code = VALUES(error_code),
+           error_message = VALUES(error_message)`,
+        [
+          item.id,
+          input.id,
+          item.repositoryId,
+          item.status,
+          toMysqlDateTime(item.startedAt),
+          toMysqlDateTime(item.finishedAt),
+          Math.max(0, new Date(item.finishedAt).getTime() - new Date(item.startedAt).getTime()),
+          item.collectedRepo,
+          item.collectedTraffic,
+          item.collectedReleases,
+          item.errorCode || null,
+          item.errorMessage || null
+        ]
+      );
+    }
+  } finally {
+    await pool.end();
+  }
+}
+
 function toMysqlDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
@@ -368,4 +550,38 @@ function toMysqlDateTime(value: string) {
 function toIsoString(value: Date | string) {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toISOString();
+}
+
+function toNullableIsoString(value: Date | string | null) {
+  return value === null ? null : toIsoString(value);
+}
+
+function toPersistedSyncRun(row: SyncRunRow): PersistedSyncRun {
+  return {
+    id: row.id,
+    trigger: row.trigger_source,
+    status: row.status,
+    startedAt: toIsoString(row.started_at),
+    finishedAt: toNullableIsoString(row.finished_at),
+    totalRepositories: row.total_repositories,
+    successCount: row.success_count,
+    failedCount: row.failed_count,
+    errorMessage: row.error_message
+  };
+}
+
+function toPersistedSyncRunItem(row: SyncRunItemRow): PersistedSyncRunItem {
+  return {
+    id: row.id,
+    syncRunId: row.sync_run_id,
+    repositoryId: row.repository_id,
+    status: row.status,
+    startedAt: toNullableIsoString(row.started_at),
+    finishedAt: toNullableIsoString(row.finished_at),
+    collectedRepo: Boolean(row.collected_repo),
+    collectedTraffic: Boolean(row.collected_traffic),
+    collectedReleases: Boolean(row.collected_releases),
+    errorCode: row.error_code,
+    errorMessage: row.error_message
+  };
 }

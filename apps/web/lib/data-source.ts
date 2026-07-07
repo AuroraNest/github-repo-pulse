@@ -14,7 +14,7 @@ import {
   type SyncRun,
   type TrendPoint
 } from "@repopulse/core";
-import { readReports } from "@repopulse/db";
+import { readReports, readSyncRuns } from "@repopulse/db";
 import { readGitHubRuntimeConfig } from "./runtime-github-token";
 import { applyRuntimeSetupState, getSetupState } from "./runtime-setup-state";
 
@@ -112,7 +112,23 @@ export async function getReportData(): Promise<{ source: GitHubDataSource; repor
 
 export async function getSyncRunData(): Promise<{ source: GitHubDataSource; runs: SyncRun[] }> {
   const source = await getGitHubDataSource();
-  return { source, runs: source.demo ? mockSyncRuns : [] };
+  if (source.demo) return { source, runs: mockSyncRuns };
+
+  const runs = await readSyncRuns().catch(() => []);
+  return {
+    source,
+    runs: runs.map((run) => ({
+      id: run.id,
+      trigger: run.trigger,
+      status: run.status,
+      startedAt: run.startedAt,
+      finishedAt: run.finishedAt || undefined,
+      totalRepositories: run.totalRepositories,
+      successCount: run.successCount,
+      failedCount: run.failedCount,
+      errorMessage: run.errorMessage || undefined
+    }))
+  };
 }
 
 export function isGitHubConfigurationRequired(source: GitHubDataSource) {
