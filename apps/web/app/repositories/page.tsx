@@ -3,42 +3,45 @@ import Link from "next/link";
 import { mockRepositories } from "@repopulse/core";
 import { Card, Chip, SectionTitle } from "../../components/ui";
 import { formatCompactNumber, formatDate } from "../../lib/format";
+import { translateStatus, translateVisibility, type Locale } from "../../lib/i18n";
+import { getDictionary } from "../../lib/locale";
 
-export default function RepositoriesPage() {
+export default async function RepositoriesPage() {
+  const { locale, t } = await getDictionary();
   const fastest = [...mockRepositories].sort((a, b) => b.todayDownloads - a.todayDownloads)[0];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Repositories</h1>
-        <p className="mt-2 text-slate-500">Browse and manage all tracked GitHub repositories.</p>
+        <h1 className="text-3xl font-semibold">{t.repositories.title}</h1>
+        <p className="mt-2 text-slate-500">{t.repositories.description}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <SectionTitle title="Total Tracked Repositories" />
+          <SectionTitle title={t.repositories.totalTracked} />
           <p className="mt-4 text-3xl font-semibold">{mockRepositories.filter((repo) => repo.tracked).length}</p>
         </Card>
         <Card>
-          <SectionTitle title="Active Alerts" />
+          <SectionTitle title={t.repositories.activeAlerts} />
           <p className="mt-4 text-3xl font-semibold">1</p>
         </Card>
         <Card>
-          <SectionTitle title="Fastest Growing" />
+          <SectionTitle title={t.repositories.fastestGrowing} />
           <p className="mt-4 text-2xl font-semibold">{fastest.name}</p>
-          <p className="text-sm text-emerald-600">+{fastest.todayDownloads} downloads today</p>
+          <p className="text-sm text-emerald-600">+{formatCompactNumber(fastest.todayDownloads, locale)} {t.common.downloadsToday}</p>
         </Card>
       </div>
 
       <Card>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
-            {["All", "Active", "Private", "Public", "Favorites"].map((tab) => (
+            {t.repositories.tabs.map((tab) => (
               <button key={tab} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600">{tab}</button>
             ))}
           </div>
           <div className="flex flex-wrap gap-2">
-            {["Language", "Growth", "Traffic", "Release Enabled", "More filters"].map((filter) => (
+            {t.repositories.filters.map((filter) => (
               <Chip key={filter}>{filter}</Chip>
             ))}
           </div>
@@ -48,7 +51,7 @@ export default function RepositoriesPage() {
           <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-left text-sm">
             <thead>
               <tr className="text-xs uppercase text-slate-500">
-                {["Repository", "Visibility", "Language", "Stars", "Forks", "14-Day Visitors", "14-Day Clones", "Total Downloads", "Latest Release", "Last Sync", "Status", "Actions"].map((column) => (
+                {t.repositories.columns.map((column) => (
                   <th key={column} className="border-b border-slate-200 px-3 py-3 font-semibold">{column}</th>
                 ))}
               </tr>
@@ -68,18 +71,18 @@ export default function RepositoriesPage() {
                       </div>
                     </Link>
                   </td>
-                  <td className="px-3 py-4"><Chip tone={repo.isPrivate ? "purple" : "green"}>{repo.visibility}</Chip></td>
+                  <td className="px-3 py-4"><Chip tone={repo.isPrivate ? "purple" : "green"}>{translateVisibility(repo.visibility, locale)}</Chip></td>
                   <td className="px-3 py-4">{repo.primaryLanguage}</td>
-                  <td className="px-3 py-4"><Metric icon={Star} value={repo.stars} /></td>
-                  <td className="px-3 py-4"><Metric icon={GitFork} value={repo.forks} /></td>
-                  <td className="px-3 py-4"><Metric icon={Eye} value={repo.visitors14d} /></td>
-                  <td className="px-3 py-4">{formatCompactNumber(repo.clones14d)}</td>
-                  <td className="px-3 py-4">{formatCompactNumber(repo.totalDownloads)}</td>
+                  <td className="px-3 py-4"><Metric icon={Star} value={repo.stars} locale={locale} /></td>
+                  <td className="px-3 py-4"><Metric icon={GitFork} value={repo.forks} locale={locale} /></td>
+                  <td className="px-3 py-4"><Metric icon={Eye} value={repo.visitors14d} locale={locale} /></td>
+                  <td className="px-3 py-4">{formatCompactNumber(repo.clones14d, locale)}</td>
+                  <td className="px-3 py-4">{formatCompactNumber(repo.totalDownloads, locale)}</td>
                   <td className="px-3 py-4">{repo.latestRelease}</td>
-                  <td className="px-3 py-4">{formatDate(repo.lastSyncAt)}</td>
-                  <td className="px-3 py-4"><Chip tone={repo.status === "warning" ? "yellow" : "green"}>{repo.status}</Chip></td>
+                  <td className="px-3 py-4">{formatDate(repo.lastSyncAt, locale)}</td>
+                  <td className="px-3 py-4"><Chip tone={repo.status === "warning" ? "yellow" : "green"}>{translateStatus(repo.status, locale)}</Chip></td>
                   <td className="px-3 py-4">
-                    <Link href={`/repositories/${repo.id}`} className="rounded-lg border border-slate-200 px-3 py-2 font-medium">View</Link>
+                    <Link href={`/repositories/${repo.id}`} className="rounded-lg border border-slate-200 px-3 py-2 font-medium">{t.common.view}</Link>
                   </td>
                 </tr>
               ))}
@@ -91,11 +94,11 @@ export default function RepositoriesPage() {
   );
 }
 
-function Metric({ icon: Icon, value }: { icon: LucideIcon; value: number }) {
+function Metric({ icon: Icon, value, locale }: { icon: LucideIcon; value: number; locale: Locale }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <Icon size={14} className="text-slate-400" />
-      {formatCompactNumber(value)}
+      {formatCompactNumber(value, locale)}
     </span>
   );
 }

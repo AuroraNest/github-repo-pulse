@@ -1,63 +1,66 @@
 import { Bot, Database, Github, ShieldAlert, Timer, Webhook, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, Chip, SectionTitle } from "../../components/ui";
+import { getDictionary } from "../../lib/locale";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const { t } = await getDictionary();
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Settings</h1>
-        <p className="mt-2 text-slate-500">Manage GitHub, sync, storage, AI, notifications, and privacy controls.</p>
+        <h1 className="text-3xl font-semibold">{t.settings.title}</h1>
+        <p className="mt-2 text-slate-500">{t.settings.description}</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SettingsCard icon={Github} title="GitHub Connection" subtitle="AuroraNest connected with masked token.">
+        <SettingsCard icon={Github} title={t.settings.githubTitle} subtitle={t.settings.githubSubtitle}>
           <div className="flex flex-wrap gap-2">
-            <Chip tone="green">Connected</Chip>
+            <Chip tone="green">{t.settings.connected}</Chip>
             <Chip>github_pat_****mock</Chip>
-            <Chip>Rate limit healthy</Chip>
+            <Chip>{t.settings.rateLimitHealthy}</Chip>
           </div>
           <div className="mt-4 flex gap-2">
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">Reverify token</button>
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">Rotate token</button>
+            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">{t.settings.reverifyToken}</button>
+            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">{t.settings.rotateToken}</button>
           </div>
         </SettingsCard>
 
-        <SettingsCard icon={Timer} title="Sync Schedule" subtitle="Daily sync runs at 08:00 UTC.">
+        <SettingsCard icon={Timer} title={t.settings.syncTitle} subtitle={t.settings.syncSubtitle}>
           <div className="grid gap-3 md:grid-cols-3">
-            <Field label="Run time" value="08:00" />
-            <Field label="Timezone" value="UTC" />
-            <Field label="Concurrency" value="3" />
+            <Field label={t.settings.runTime} value="08:00" />
+            <Field label={t.settings.timezone} value="UTC" />
+            <Field label={t.settings.concurrency} value="3" />
           </div>
         </SettingsCard>
 
-        <SettingsCard icon={Database} title="Database Backend" subtitle="MySQL-first schema with placeholder-only local configuration.">
+        <SettingsCard icon={Database} title={t.settings.dbTitle} subtitle={t.settings.dbSubtitle}>
           <div className="flex flex-wrap gap-2">
-            <Chip tone="blue">Provider: MySQL</Chip>
-            <Chip tone="green">Mock fallback active</Chip>
-            <Chip>Migration: 0001_initial.sql</Chip>
+            <Chip tone="blue">{t.settings.providerMysql}</Chip>
+            <Chip tone="green">{t.settings.mockFallbackActive}</Chip>
+            <Chip>{t.settings.migration}</Chip>
           </div>
         </SettingsCard>
 
-        <SettingsCard icon={Bot} title="AI Settings" subtitle="Rule-based reports are used when AI is disabled or unavailable.">
+        <SettingsCard icon={Bot} title={t.settings.aiTitle} subtitle={t.settings.aiSubtitle}>
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Provider" value="OpenAI-compatible" />
-            <Field label="Model" value="Not configured" />
+            <Field label={t.settings.provider} value="OpenAI-compatible" />
+            <Field label={t.settings.model} value={t.settings.modelValue} />
           </div>
-          <p className="mt-3 text-sm text-slate-500">RepoPulse only sends aggregated metrics to AI providers. Tokens and secrets are never sent.</p>
+          <p className="mt-3 text-sm text-slate-500">{t.settings.aiPrivacy}</p>
         </SettingsCard>
 
-        <SettingsCard icon={Webhook} title="Notification Channels" subtitle="In-app notifications are ready; webhook delivery is a later integration.">
+        <SettingsCard icon={Webhook} title={t.settings.notificationsTitle} subtitle={t.settings.notificationsSubtitle}>
           <div className="flex flex-wrap gap-2">
-            <Chip tone="green">In-app enabled</Chip>
-            <Chip>Webhook not configured</Chip>
+            <Chip tone="green">{t.settings.inAppEnabled}</Chip>
+            <Chip>{t.settings.webhookNotConfigured}</Chip>
           </div>
         </SettingsCard>
 
-        <SettingsCard icon={ShieldAlert} title="Privacy & Data Controls" subtitle="Dangerous actions require explicit confirmation.">
+        <SettingsCard icon={ShieldAlert} title={t.settings.privacyTitle} subtitle={t.settings.privacySubtitle}>
           <div className="flex flex-wrap gap-2">
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">Export analytics CSV</button>
-            <button className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">Delete all data</button>
+            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">{t.settings.exportCsv}</button>
+            <button className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{t.settings.deleteAllData}</button>
           </div>
         </SettingsCard>
       </div>
