@@ -14,7 +14,7 @@ export function Chip({ children, tone = "slate" }: { children: ReactNode; tone?:
     red: "bg-rose-50 text-rose-700 border-rose-200"
   };
 
-  return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${tones[tone]}`}>{children}</span>;
+  return <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium ${tones[tone]}`}>{children}</span>;
 }
 
 export function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
