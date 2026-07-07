@@ -1,14 +1,20 @@
-import { CalendarDays, FileJson, FileText, RefreshCw } from "lucide-react";
 import { Card, Chip, EmptyState, SectionTitle } from "../../components/ui";
 import { getReportData, isGitHubConfigurationRequired } from "../../lib/data-source";
 import { getDictionary } from "../../lib/locale";
+import { ReportsActions } from "./reports-actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const { t } = await getDictionary();
+  const { locale, t } = await getDictionary();
   const { source, reports } = await getReportData();
   const report = reports[0];
+  const actionLabels = {
+    daily: t.common.daily,
+    exportJson: t.reports.exportJson,
+    exportMarkdown: t.reports.exportMarkdown,
+    regenerate: t.reports.regenerate
+  };
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
 
   return (
@@ -18,12 +24,7 @@ export default async function ReportsPage() {
           <h1 className="text-3xl font-semibold">{t.reports.title}</h1>
           <p className="mt-2 text-slate-500">{t.reports.description}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium"><CalendarDays size={16} />{t.common.daily}</button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium"><FileText size={16} />{t.reports.exportMarkdown}</button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium"><FileJson size={16} />{t.reports.exportJson}</button>
-          <button className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white"><RefreshCw size={16} />{t.reports.regenerate}</button>
-        </div>
+        <ReportsActions initialReport={report || null} labels={actionLabels} locale={locale} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_320px]">

@@ -11,9 +11,11 @@ type GenerateDailyReportInput = {
 export function generateDailyReport(input: GenerateDailyReportInput): ReportData {
   const topRepo = [...input.repositories].sort((a, b) => b.todayDownloads - a.todayDownloads)[0];
   const topAsset = [...input.assets].sort((a, b) => b.todayDownloads - a.todayDownloads)[0];
-  const summary = `${topRepo.name} led today's repository activity with ${topRepo.todayDownloads} new downloads, while tracked repositories reached ${input.overview.kpis.totalStars.toLocaleString()} total stars.`;
+  const topRepoName = topRepo?.name || "No repository";
+  const topRepoDownloads = topRepo?.todayDownloads || 0;
+  const summary = `${topRepoName} led today's repository activity with ${topRepoDownloads} new downloads, while tracked repositories reached ${input.overview.kpis.totalStars.toLocaleString()} total stars.`;
   const highlights = [
-    `${topAsset.assetName} added ${topAsset.todayDownloads} downloads today.`,
+    topAsset ? `${topAsset.assetName} added ${topAsset.todayDownloads} downloads today.` : "No release download data is available yet.",
     `${input.overview.kpis.trackedRepositories} repositories are currently tracked.`,
     `${input.overview.kpis.visitors14d.toLocaleString()} aggregated 14-day unique visitors were observed across tracked repositories.`
   ];
@@ -21,7 +23,7 @@ export function generateDailyReport(input: GenerateDailyReportInput): ReportData
     .filter((repo) => repo.status !== "healthy")
     .map((repo) => `${repo.fullName} needs attention: ${repo.status}.`);
   const suggestedActions = [
-    `Review the ${topAsset.repository} release notes while download momentum is high.`,
+    topAsset ? `Review the ${topAsset.repository} release notes while download momentum is high.` : "Sync release assets before reviewing download momentum.",
     "Check repositories with traffic permission warnings before the next scheduled sync.",
     "Use favorites to pin the repositories that should appear first in daily reviews."
   ];

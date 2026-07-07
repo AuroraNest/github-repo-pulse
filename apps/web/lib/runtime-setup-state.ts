@@ -11,14 +11,7 @@ type SetupState = {
   syncTimezone: string;
 };
 
-let setupState: SetupState = {
-  completed: false,
-  dataRetentionDays: 365,
-  includePrivate: true,
-  selectedRepositoryIds: [],
-  syncCron: "0 8 * * *",
-  syncTimezone: "UTC"
-};
+let setupState: SetupState = defaultSetupState();
 
 const setupStateCookieName = "repopulse_setup_state";
 
@@ -35,13 +28,13 @@ export async function getRuntimeSetupState() {
 }
 
 export function saveRuntimeSetupState(next: SetupState) {
-  setupState = next;
+  setupState = normalizeSetupState(next);
   return setupState;
 }
 
 export function attachRuntimeSetupState(response: NextResponse, next: SetupState) {
-  saveRuntimeSetupState(next);
-  response.cookies.set(setupStateCookieName, encodeSetupState(next), {
+  const normalized = saveRuntimeSetupState(next);
+  response.cookies.set(setupStateCookieName, encodeSetupState(normalized), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -53,15 +46,27 @@ export function attachRuntimeSetupState(response: NextResponse, next: SetupState
 }
 
 export function applyRuntimeSetupState(repositories: RepositorySummary[], state: SetupState) {
-  if (state.selectedRepositoryIds.length === 0) {
+  const selectedRepositoryIds = state.selectedRepositoryIds || [];
+  if (selectedRepositoryIds.length === 0) {
     return repositories;
   }
 
-  const tracked = new Set(state.selectedRepositoryIds);
+  const tracked = new Set(selectedRepositoryIds);
   return repositories.map((repository) => ({
     ...repository,
     tracked: tracked.has(repository.id)
   }));
+}
+
+function defaultSetupState(): SetupState {
+  return {
+    completed: false,
+    dataRetentionDays: 365,
+    includePrivate: true,
+    selectedRepositoryIds: [],
+    syncCron: "0 8 * * *",
+    syncTimezone: "UTC"
+  };
 }
 
 function encodeSetupState(state: SetupState) {
@@ -70,9 +75,20 @@ function encodeSetupState(state: SetupState) {
 
 function decodeSetupState(value: string): SetupState | null {
   try {
-    const decoded = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as SetupState;
-    return Array.isArray(decoded.selectedRepositoryIds) ? decoded : null;
+    return normalizeSetupState(JSON.parse(Buffer.from(value, "base64url").toString("utf8")));
   } catch {
     return null;
   }
+}
+
+function normalizeSetupState(value: unknown): SetupState {
+  const source = typeof value === "object" && value ? value as Partial<SetupState> : {};
+  return {
+    completed: Boolean(source.completed),
+    dataRetentionDays: source.dataRetentionDays === null ? null : typeof source.dataRetentionDays === "number" ? source.dataRetentionDays : 365,
+    includePrivate: source.includePrivate !== false,
+    selectedRepositoryIds: Array.isArray(source.selectedRepositoryIds) ? source.selectedRepositoryIds.map(String) : [],
+    syncCron: typeof source.syncCron === "string" ? source.syncCron : "0 8 * * *",
+    syncTimezone: typeof source.syncTimezone === "string" ? source.syncTimezone : "UTC"
+  };
 }
