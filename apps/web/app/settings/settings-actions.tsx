@@ -20,6 +20,82 @@ type Feedback = {
   message: string;
 };
 
+export function SettingsSyncForm({
+  concurrency,
+  initialCron,
+  initialTimezone,
+  labels,
+  locale
+}: {
+  concurrency: number;
+  initialCron: string;
+  initialTimezone: string;
+  labels: {
+    concurrency: string;
+    runTime: string;
+    timezone: string;
+  };
+  locale: Locale;
+}) {
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [runTime, setRunTime] = useState(cronToTime(initialCron));
+  const [timezone, setTimezone] = useState(initialTimezone);
+  const copy = locale === "zh" ? zhCopy : enCopy;
+
+  async function save() {
+    if (!/^\d{2}:\d{2}$/.test(runTime)) {
+      setFeedback({ tone: "red", message: copy.invalidTime });
+      return;
+    }
+
+    setBusy(true);
+    setFeedback(null);
+
+    try {
+      const response = await fetch("/api/settings", {
+        body: JSON.stringify({ syncCron: timeToCron(runTime), syncTimezone: timezone.trim() || "UTC" }),
+        headers: { "Content-Type": "application/json" },
+        method: "PATCH"
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) {
+        setFeedback({ tone: "red", message: payload?.error?.message || copy.failed });
+        return;
+      }
+
+      setFeedback({ tone: "green", message: copy.saved });
+    } catch (error) {
+      setFeedback({ tone: "red", message: error instanceof Error ? error.message : copy.failed });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <label>
+          <span className="text-xs font-medium uppercase text-slate-500">{labels.runTime}</span>
+          <input className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm" inputMode="numeric" onChange={(event) => setRunTime(event.target.value)} placeholder="08:00" value={runTime} />
+        </label>
+        <label>
+          <span className="text-xs font-medium uppercase text-slate-500">{labels.timezone}</span>
+          <input className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm" onChange={(event) => setTimezone(event.target.value)} value={timezone} />
+        </label>
+        <div>
+          <div className="text-xs font-medium uppercase text-slate-500">{labels.concurrency}</div>
+          <div className="mt-1 flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">{concurrency}</div>
+        </div>
+      </div>
+      <button className="mt-4 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60" disabled={busy} onClick={save} type="button">
+        {busy ? copy.working : copy.saveSync}
+      </button>
+      {feedback ? <FeedbackMessage feedback={feedback} /> : null}
+    </div>
+  );
+}
+
 export function SettingsActions({ kind, labels, locale }: SettingsActionsProps) {
   const router = useRouter();
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -130,6 +206,16 @@ function filenameFromDisposition(disposition: string | null) {
   return disposition?.match(/filename="([^"]+)"/)?.[1] || null;
 }
 
+function cronToTime(cron: string) {
+  const [minute = "0", hour = "8"] = cron.split(" ");
+  return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
+}
+
+function timeToCron(time: string) {
+  const [hour = "08", minute = "00"] = time.split(":");
+  return `${Number(minute)} ${Number(hour)} * * *`;
+}
+
 const zhCopy = {
   confirmDelete: "确认删除",
   deleteConfirm: "再次点击确认删除. 当前版本仍会被后端保护, 不会实际删除数据.",
@@ -137,6 +223,9 @@ const zhCopy = {
   done: "操作已完成.",
   exported: "CSV 已准备下载.",
   failed: "操作失败.",
+  invalidTime: "运行时间格式应为 HH:MM.",
+  saved: "同步计划已保存.",
+  saveSync: "保存同步计划",
   working: "处理中..."
 };
 
@@ -147,5 +236,8 @@ const enCopy = {
   done: "Action completed.",
   exported: "CSV is ready to download.",
   failed: "Action failed.",
+  invalidTime: "Use HH:MM for run time.",
+  saved: "Sync schedule saved.",
+  saveSync: "Save sync schedule",
   working: "Working..."
 };

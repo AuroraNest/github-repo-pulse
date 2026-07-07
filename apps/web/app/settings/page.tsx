@@ -1,13 +1,17 @@
+import { readRuntimeConfig } from "@repopulse/core";
+import { defaultAppSettings, readAppSettings } from "@repopulse/db";
 import { Bot, Database, Github, ShieldAlert, Timer, Webhook, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, Chip, SectionTitle } from "../../components/ui";
 import { getGitHubDataSource } from "../../lib/data-source";
 import { getDictionary } from "../../lib/locale";
-import { SettingsActions } from "./settings-actions";
+import { SettingsActions, SettingsSyncForm } from "./settings-actions";
 
 export default async function SettingsPage() {
   const { locale, t } = await getDictionary();
+  const config = readRuntimeConfig();
   const githubSource = await getGitHubDataSource();
+  const settings = await readAppSettings().catch(() => defaultAppSettings());
   const actionLabels = {
     deleteAllData: t.settings.deleteAllData,
     exportCsv: t.settings.exportCsv,
@@ -34,11 +38,17 @@ export default async function SettingsPage() {
         </SettingsCard>
 
         <SettingsCard icon={Timer} title={t.settings.syncTitle} subtitle={t.settings.syncSubtitle}>
-          <div className="grid gap-3 md:grid-cols-3">
-            <Field label={t.settings.runTime} value="08:00" />
-            <Field label={t.settings.timezone} value="UTC" />
-            <Field label={t.settings.concurrency} value="3" />
-          </div>
+          <SettingsSyncForm
+            concurrency={config.syncConcurrency}
+            initialCron={settings.syncCron}
+            initialTimezone={settings.syncTimezone}
+            labels={{
+              concurrency: t.settings.concurrency,
+              runTime: t.settings.runTime,
+              timezone: t.settings.timezone
+            }}
+            locale={locale}
+          />
         </SettingsCard>
 
         <SettingsCard icon={Database} title={t.settings.dbTitle} subtitle={t.settings.dbSubtitle}>
