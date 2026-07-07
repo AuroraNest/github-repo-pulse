@@ -145,7 +145,7 @@ export const dictionary = {
       sortBy: "Sort by",
       syncFailed: "Action failed.",
       syncNow: "Sync now",
-      syncQueued: "updated.",
+      syncQueued: "sync check completed.",
       unfavorite: "Unfavorite",
       working: "Working..."
     },
@@ -395,7 +395,7 @@ export const dictionary = {
       sortBy: "排序",
       syncFailed: "操作失败.",
       syncNow: "立即同步",
-      syncQueued: "已更新.",
+      syncQueued: "同步检查完成.",
       unfavorite: "取消收藏",
       working: "处理中..."
     },
