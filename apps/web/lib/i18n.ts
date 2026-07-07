@@ -131,7 +131,7 @@ export const dictionary = {
     },
     repositories: {
       title: "Repositories",
-      description: "Browse and manage all tracked GitHub repositories.",
+      description: "Browse GitHub repositories and manage tracking status.",
       totalTracked: "Total Tracked Repositories",
       activeAlerts: "Active Alerts",
       fastestGrowing: "Fastest Growing",
@@ -381,7 +381,7 @@ export const dictionary = {
     },
     repositories: {
       title: "仓库",
-      description: "浏览并管理所有已跟踪的 GitHub 仓库.",
+      description: "浏览 GitHub 仓库并管理跟踪状态.",
       totalTracked: "已跟踪仓库总数",
       activeAlerts: "活跃告警",
       fastestGrowing: "增长最快",

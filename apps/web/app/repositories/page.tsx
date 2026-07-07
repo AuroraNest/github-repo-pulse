@@ -15,7 +15,8 @@ export default async function RepositoriesPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const { source, repositories } = await getRepositoryCollection();
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
-  const fastest = [...repositories].sort((a, b) => b.todayDownloads - a.todayDownloads || b.stars - a.stars)[0];
+  const trackedRepositories = repositories.filter((repo) => repo.tracked);
+  const fastest = [...trackedRepositories].sort((a, b) => b.todayDownloads - a.todayDownloads || b.stars - a.stars)[0];
 
   return (
     <div className="space-y-6">
@@ -27,7 +28,7 @@ export default async function RepositoriesPage({ searchParams }: PageProps) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <SectionTitle title={t.repositories.totalTracked} />
-          <p className="mt-4 text-3xl font-semibold">{repositories.filter((repo) => repo.tracked).length}</p>
+          <p className="mt-4 text-3xl font-semibold">{trackedRepositories.length}</p>
         </Card>
         <Card>
           <SectionTitle title={t.repositories.activeAlerts} />
