@@ -44,13 +44,29 @@ export async function getRepositoryCollection(): Promise<{ source: GitHubDataSou
     return { source, repositories: [] };
   }
 
-  const repositories = await listAccessibleRepositories({
-    token: config.githubToken,
-    baseUrl: config.githubApiBaseUrl,
-    mock: source.demo
-  });
+  try {
+    const repositories = await listAccessibleRepositories({
+      token: config.githubToken,
+      baseUrl: config.githubApiBaseUrl,
+      mock: source.demo
+    });
 
-  return { source, repositories };
+    return { source, repositories };
+  } catch (error) {
+    if (isRecoverableGitHubError(error)) {
+      return {
+        source: {
+          mode: "configuration_required",
+          configured: false,
+          demo: false,
+          message: "GitHub token is invalid, expired, rate-limited, or cannot list repositories. Verify the token on Setup."
+        },
+        repositories: []
+      };
+    }
+
+    throw error;
+  }
 }
 
 export async function getOverviewData(): Promise<{ source: GitHubDataSource; overview: OverviewData }> {
@@ -173,4 +189,9 @@ function buildOverview(repositories: RepositorySummary[], assets: ReleaseAssetSu
     topReleases: assets,
     activityFeed: []
   };
+}
+
+function isRecoverableGitHubError(error: unknown) {
+  const status = typeof error === "object" && error && "status" in error ? Number((error as { status: unknown }).status) : undefined;
+  return status === 401 || status === 403 || status === 429;
 }
