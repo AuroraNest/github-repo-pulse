@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { jsonOk } from "../../../../lib/api";
 import { getRepositoryCollection, githubDataSourcePayload } from "../../../../lib/data-source";
-import { getRuntimeSetupState } from "../../../../lib/runtime-setup-state";
+import { getSetupState } from "../../../../lib/runtime-setup-state";
 import { requireSession } from "../../../../lib/session";
 
 export async function GET(request: NextRequest) {
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   if (!session.ok) return session.response;
 
   const { source, repositories } = await getRepositoryCollection();
-  const setup = await getRuntimeSetupState();
+  const setup = await getSetupState();
 
   return jsonOk({
     github: githubDataSourcePayload(source),

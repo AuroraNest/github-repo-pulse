@@ -1,8 +1,9 @@
 import type { RepositorySummary } from "@repopulse/core";
+import { readAppSettings, readTrackedRepositoryIds } from "@repopulse/db";
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 
-type SetupState = {
+export type SetupState = {
   completed: boolean;
   dataRetentionDays: number | null;
   includePrivate: boolean;
@@ -25,6 +26,26 @@ export async function getRuntimeSetupState() {
   }
 
   return setupState;
+}
+
+export async function getSetupState() {
+  try {
+    const [settings, selectedRepositoryIds] = await Promise.all([
+      readAppSettings(),
+      readTrackedRepositoryIds()
+    ]);
+
+    return {
+      completed: settings.setupCompleted,
+      dataRetentionDays: settings.dataRetentionDays,
+      includePrivate: true,
+      selectedRepositoryIds: Array.from(selectedRepositoryIds),
+      syncCron: settings.syncCron,
+      syncTimezone: settings.syncTimezone
+    };
+  } catch {
+    return getRuntimeSetupState();
+  }
 }
 
 export function saveRuntimeSetupState(next: SetupState) {

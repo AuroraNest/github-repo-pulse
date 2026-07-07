@@ -1,6 +1,9 @@
+import { readRuntimeConfig, verifyGitHubToken } from "@repopulse/core";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../../lib/api";
+import { persistVerifiedGitHubToken } from "../../../../../lib/github-connection";
+import { setRuntimeGitHubToken } from "../../../../../lib/runtime-github-token";
 import { requireSession } from "../../../../../lib/session";
 
 const rotateSchema = z.object({
@@ -16,5 +19,24 @@ export async function POST(request: NextRequest) {
     return jsonError("VALIDATION_ERROR", "Replacement token is required.", 400, body.error.flatten());
   }
 
-  return jsonOk({ rotated: true, tokenMask: `${body.data.token.slice(0, 10)}****${body.data.token.slice(-4)}` });
+  const config = readRuntimeConfig();
+  const result = await verifyGitHubToken({
+    token: body.data.token,
+    baseUrl: config.githubApiBaseUrl,
+    mock: config.mockGitHub
+  }).catch(() => null);
+
+  if (!result) {
+    return jsonError("GITHUB_TOKEN_INVALID", "GitHub token verification failed.", 401);
+  }
+
+  try {
+    await persistVerifiedGitHubToken(body.data.token, result);
+  } catch {
+    return jsonError("DATABASE_PERSISTENCE_FAILED", "GitHub token was verified but could not be saved.", 500);
+  }
+
+  setRuntimeGitHubToken(body.data.token);
+
+  return jsonOk({ rotated: true, account: result.account, tokenMask: result.tokenMask });
 }

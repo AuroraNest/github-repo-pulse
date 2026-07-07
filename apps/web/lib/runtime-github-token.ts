@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import { readRuntimeConfig } from "@repopulse/core";
+import { readStoredGitHubToken } from "./github-connection";
 
 const runtimeGitHubTokenCookieName = "repopulse_github_token";
 let runtimeGitHubToken = "";
@@ -15,7 +16,8 @@ export async function getRuntimeGitHubToken() {
 
 export async function readGitHubRuntimeConfig() {
   const config = readRuntimeConfig();
-  return { ...config, githubToken: config.githubToken || await getRuntimeGitHubToken() };
+  const storedToken = config.githubToken ? null : await readStoredGitHubToken(config.sessionSecret);
+  return { ...config, githubToken: config.githubToken || storedToken || await getRuntimeGitHubToken() };
 }
 
 export function setRuntimeGitHubToken(token: string) {

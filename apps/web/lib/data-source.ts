@@ -15,7 +15,7 @@ import {
   type TrendPoint
 } from "@repopulse/core";
 import { readGitHubRuntimeConfig } from "./runtime-github-token";
-import { applyRuntimeSetupState, getRuntimeSetupState } from "./runtime-setup-state";
+import { applyRuntimeSetupState, getSetupState } from "./runtime-setup-state";
 
 export type GitHubDataMode = "configuration_required" | "demo" | "live";
 
@@ -51,7 +51,7 @@ export async function getRepositoryCollection(): Promise<{ source: GitHubDataSou
       mock: source.demo
     });
 
-    return { source, repositories: applyRuntimeSetupState(repositories, await getRuntimeSetupState()) };
+    return { source, repositories: applyRuntimeSetupState(repositories, await getSetupState()) };
   } catch (error) {
     if (isRecoverableGitHubError(error)) {
       return {

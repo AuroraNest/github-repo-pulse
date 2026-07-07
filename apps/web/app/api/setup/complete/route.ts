@@ -1,6 +1,8 @@
+import { saveAppSettings, saveRepositories } from "@repopulse/db";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
+import { getRepositoryCollection } from "../../../../lib/data-source";
 import { attachRuntimeSetupState } from "../../../../lib/runtime-setup-state";
 import { requireSession } from "../../../../lib/session";
 
@@ -31,9 +33,26 @@ export async function POST(request: NextRequest) {
     syncTimezone: body.data.syncTimezone
   };
 
+  const { repositories } = await getRepositoryCollection();
+  try {
+    await saveAppSettings({
+      setupCompleted: setup.completed,
+      syncCron: setup.syncCron,
+      syncTimezone: setup.syncTimezone,
+      dataRetentionDays: setup.dataRetentionDays
+    });
+    await saveRepositories({
+      repositories,
+      selectedRepositoryIds: setup.selectedRepositoryIds,
+      trackAll: body.data.trackAll
+    });
+  } catch {
+    return jsonError("DATABASE_PERSISTENCE_FAILED", "Setup could not be saved.", 500);
+  }
+
   return attachRuntimeSetupState(jsonOk({
     setupCompleted: setup.completed,
-    trackedRepositoriesCount: setup.selectedRepositoryIds.length,
+    trackedRepositoriesCount: body.data.trackAll ? repositories.length : setup.selectedRepositoryIds.length,
     firstSync: { status: "queued", trigger: "setup" }
   }), setup);
 }

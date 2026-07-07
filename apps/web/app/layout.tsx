@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "../components/shell";
 import { getGitHubDataSource } from "../lib/data-source";
 import { getDictionary } from "../lib/locale";
-import { getRuntimeSetupState } from "../lib/runtime-setup-state";
+import { getSetupState } from "../lib/runtime-setup-state";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const { locale, t } = await getDictionary();
   const githubSource = await getGitHubDataSource();
-  const setup = await getRuntimeSetupState();
+  const setup = await getSetupState();
 
   return (
     <html lang={locale}>

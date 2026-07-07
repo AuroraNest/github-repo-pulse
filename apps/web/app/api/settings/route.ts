@@ -1,8 +1,10 @@
 import { readRuntimeConfig } from "@repopulse/core";
+import { defaultAppSettings, readAppSettings, saveAppSettings } from "@repopulse/db";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../lib/api";
 import { getGitHubDataSource, githubDataSourcePayload } from "../../../lib/data-source";
+import { readStoredGitHubConnection } from "../../../lib/github-connection";
 import { requireSession } from "../../../lib/session";
 
 const settingsSchema = z.object({
@@ -17,24 +19,26 @@ export async function GET(request: NextRequest) {
   if (!session.ok) return session.response;
 
   const config = readRuntimeConfig();
+  const settings = await readAppSettings().catch(() => defaultAppSettings());
+  const connection = await readStoredGitHubConnection();
   const githubSource = await getGitHubDataSource();
   return jsonOk({
     sync: {
-      enabled: true,
-      cron: "0 8 * * *",
-      timezone: "UTC",
+      enabled: settings.syncEnabled,
+      cron: settings.syncCron,
+      timezone: settings.syncTimezone,
       concurrency: config.syncConcurrency
     },
-    retention: { dataRetentionDays: 365 },
+    retention: { dataRetentionDays: settings.dataRetentionDays },
     github: {
       ...githubDataSourcePayload(githubSource),
-      connected: githubSource.configured,
-      accountLogin: null,
-      tokenMask: githubSource.mode === "live" ? "configured" : null,
+      connected: Boolean(connection) || githubSource.configured,
+      accountLogin: connection?.accountLogin || null,
+      tokenMask: connection?.tokenMask || (githubSource.mode === "live" ? "configured" : null),
       rateLimit: null
     },
     ai: {
-      enabled: config.aiEnabled,
+      enabled: settings.aiEnabled || config.aiEnabled,
       provider: "OpenAI-compatible",
       model: process.env.AI_MODEL || null
     },
@@ -59,5 +63,15 @@ export async function PATCH(request: NextRequest) {
     return jsonError("VALIDATION_ERROR", "Settings payload is invalid.", 400, body.error.flatten());
   }
 
-  return jsonOk({ saved: true, settings: body.data });
+  try {
+    const settings = await saveAppSettings({
+      syncEnabled: body.data.syncEnabled,
+      syncCron: body.data.syncCron,
+      syncTimezone: body.data.syncTimezone,
+      aiEnabled: body.data.aiEnabled
+    });
+    return jsonOk({ saved: true, settings });
+  } catch {
+    return jsonError("DATABASE_PERSISTENCE_FAILED", "Settings could not be saved.", 500);
+  }
 }
