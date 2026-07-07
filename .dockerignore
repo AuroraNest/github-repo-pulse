@@ -1,0 +1,11 @@
+.DS_Store
+.env*
+.git
+.next
+.pnpm-store
+node_modules
+task-memory
+apps/web/.next
+apps/web/node_modules
+apps/worker/node_modules
+packages/*/node_modules
