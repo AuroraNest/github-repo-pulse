@@ -6,7 +6,7 @@ import { getDictionary } from "../../lib/locale";
 
 export default async function SettingsPage() {
   const { t } = await getDictionary();
-  const githubSource = getGitHubDataSource();
+  const githubSource = await getGitHubDataSource();
 
   return (
     <div className="space-y-6">

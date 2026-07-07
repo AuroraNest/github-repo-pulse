@@ -2,7 +2,7 @@ import { jsonOk } from "../../../lib/api";
 import { getReleaseData, githubDataSourcePayload } from "../../../lib/data-source";
 
 export async function GET() {
-  const { source, assets, overview } = getReleaseData();
+  const { source, assets, overview } = await getReleaseData();
   const mostDownloadedAsset = [...assets].sort((a, b) => b.totalDownloads - a.totalDownloads)[0];
 
   return jsonOk({

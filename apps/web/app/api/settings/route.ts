@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   if (!session.ok) return session.response;
 
   const config = readRuntimeConfig();
-  const githubSource = getGitHubDataSource();
+  const githubSource = await getGitHubDataSource();
   return jsonOk({
     sync: {
       enabled: true,

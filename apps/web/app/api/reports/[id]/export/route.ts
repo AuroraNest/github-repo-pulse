@@ -8,7 +8,7 @@ type RouteContext = {
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
-  const { source, reports } = getReportData();
+  const { source, reports } = await getReportData();
   if (isGitHubConfigurationRequired(source)) {
     return jsonError("GITHUB_CONFIGURATION_REQUIRED", source.message, 409);
   }

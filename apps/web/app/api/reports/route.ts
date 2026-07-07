@@ -5,7 +5,7 @@ import { getReportData, githubDataSourcePayload } from "../../../lib/data-source
 export async function GET(request: NextRequest) {
   const params = parseSearchParams(request);
   const type = params.get("type") || "daily";
-  const { source, reports: allReports } = getReportData();
+  const { source, reports: allReports } = await getReportData();
 
   return jsonOk({
     github: githubDataSourcePayload(source),

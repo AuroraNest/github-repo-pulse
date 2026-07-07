@@ -15,6 +15,7 @@ import {
   type SyncRun,
   type TrendPoint
 } from "@repopulse/core";
+import { getRuntimeGitHubToken } from "./runtime-github-token";
 
 export type GitHubDataMode = "configuration_required" | "demo" | "live";
 
@@ -32,12 +33,12 @@ type RuntimeSource = {
   source: GitHubDataSource;
 };
 
-export function getGitHubDataSource(): GitHubDataSource {
-  return readRuntimeSource().source;
+export async function getGitHubDataSource(): Promise<GitHubDataSource> {
+  return (await readRuntimeSource()).source;
 }
 
 export async function getRepositoryCollection(): Promise<{ source: GitHubDataSource; repositories: RepositorySummary[] }> {
-  const { config, source } = readRuntimeSource();
+  const { config, source } = await readRuntimeSource();
 
   if (source.mode === "configuration_required") {
     return { source, repositories: [] };
@@ -74,8 +75,8 @@ export async function getRepositoryData(id: string): Promise<{ source: GitHubDat
   return { source, repositories, repository: findRepository(repositories, id) };
 }
 
-export function getReleaseData(): { source: GitHubDataSource; assets: ReleaseAssetSummary[]; overview: OverviewData } {
-  const source = getGitHubDataSource();
+export async function getReleaseData(): Promise<{ source: GitHubDataSource; assets: ReleaseAssetSummary[]; overview: OverviewData }> {
+  const source = await getGitHubDataSource();
   if (source.demo) {
     return { source, assets: mockReleaseAssets, overview: mockOverview };
   }
@@ -83,13 +84,13 @@ export function getReleaseData(): { source: GitHubDataSource; assets: ReleaseAss
   return { source, assets: [], overview: buildOverview([], []) };
 }
 
-export function getReportData(): { source: GitHubDataSource; reports: ReportData[] } {
-  const source = getGitHubDataSource();
+export async function getReportData(): Promise<{ source: GitHubDataSource; reports: ReportData[] }> {
+  const source = await getGitHubDataSource();
   return { source, reports: source.demo ? mockReports : [] };
 }
 
-export function getSyncRunData(): { source: GitHubDataSource; runs: SyncRun[] } {
-  const source = getGitHubDataSource();
+export async function getSyncRunData(): Promise<{ source: GitHubDataSource; runs: SyncRun[] }> {
+  const source = await getGitHubDataSource();
   return { source, runs: source.demo ? mockSyncRuns : [] };
 }
 
@@ -106,8 +107,9 @@ export function githubDataSourcePayload(source: GitHubDataSource) {
   };
 }
 
-function readRuntimeSource(): RuntimeSource {
-  const config = readRuntimeConfig();
+async function readRuntimeSource(): Promise<RuntimeSource> {
+  const rawConfig = readRuntimeConfig();
+  const config = { ...rawConfig, githubToken: rawConfig.githubToken || await getRuntimeGitHubToken() };
   if (config.mockGitHub) {
     return {
       config,

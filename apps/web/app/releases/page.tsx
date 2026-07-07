@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ReleasesPage() {
   const { locale, t } = await getDictionary();
-  const { source, assets, overview } = getReleaseData();
+  const { source, assets, overview } = await getReleaseData();
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
   const mostDownloaded = [...assets].sort((a, b) => b.totalDownloads - a.totalDownloads)[0];
 

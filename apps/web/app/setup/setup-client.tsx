@@ -2,6 +2,7 @@
 
 import type { ApiResponse, RepositorySummary, TokenVerificationResult } from "@repopulse/core";
 import { CheckCircle2, Eye, EyeOff, Github, Loader2, Lock, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Card, Chip, EmptyState, SectionTitle } from "../../components/ui";
 import type { GitHubDataSource } from "../../lib/data-source";
@@ -35,6 +36,7 @@ type Feedback = {
 };
 
 export function SetupClient({ common, initialRepositories, initialSource, locale, setup }: SetupClientProps) {
+  const router = useRouter();
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
   const [tokenFeedback, setTokenFeedback] = useState<Feedback | null>(null);
@@ -76,6 +78,8 @@ export function SetupClient({ common, initialRepositories, initialSource, locale
       }
 
       setTokenFeedback({ tone: "green", message: setup.tokenVerified.replace("{login}", response.data.account.login) });
+      await loadRepositories();
+      router.refresh();
     } catch (error) {
       setTokenFeedback({ tone: "red", message: errorMessage(error) });
     } finally {

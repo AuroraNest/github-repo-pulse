@@ -17,7 +17,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return jsonError("NOT_FOUND", "Repository not found.", 404);
   }
 
-  const { assets } = getReleaseData();
+  const { assets } = await getReleaseData();
   return jsonOk({
     repository,
     assets: assets.filter((asset) => asset.repositoryId === repository.id)

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
   const { t } = await getDictionary();
-  const { source, reports } = getReportData();
+  const { source, reports } = await getReportData();
   const report = reports[0];
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
 

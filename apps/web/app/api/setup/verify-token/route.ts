@@ -2,6 +2,7 @@ import { readRuntimeConfig, verifyGitHubToken } from "@repopulse/core";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
+import { attachRuntimeGitHubToken, setRuntimeGitHubToken } from "../../../../lib/runtime-github-token";
 
 const verifySchema = z.object({
   token: z.string().min(8)
@@ -24,5 +25,7 @@ export async function POST(request: NextRequest) {
     return jsonError("GITHUB_TOKEN_INVALID", "GitHub token verification failed.", 401);
   }
 
-  return jsonOk(result);
+  setRuntimeGitHubToken(body.data.token);
+
+  return attachRuntimeGitHubToken(jsonOk(result), body.data.token);
 }

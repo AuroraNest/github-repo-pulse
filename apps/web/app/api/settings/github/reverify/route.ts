@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   if (!session.ok) return session.response;
 
   const config = readRuntimeConfig();
-  const source = getGitHubDataSource();
+  const source = await getGitHubDataSource();
   if (isGitHubConfigurationRequired(source)) {
     return jsonError("GITHUB_CONFIGURATION_REQUIRED", source.message, 409);
   }

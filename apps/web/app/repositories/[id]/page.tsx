@@ -17,7 +17,7 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
   const { locale, t } = await getDictionary();
   const { id } = await params;
   const { source, repository: repo } = await getRepositoryData(id);
-  const releaseData = getReleaseData();
+  const releaseData = await getReleaseData();
   const assets = repo ? releaseData.assets.filter((asset) => asset.repositoryId === repo.id) : [];
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
 

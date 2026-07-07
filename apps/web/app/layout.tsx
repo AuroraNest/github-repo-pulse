@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const { locale, t } = await getDictionary();
-  const githubSource = getGitHubDataSource();
+  const githubSource = await getGitHubDataSource();
 
   return (
     <html lang={locale}>

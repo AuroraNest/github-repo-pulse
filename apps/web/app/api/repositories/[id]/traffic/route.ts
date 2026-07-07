@@ -17,7 +17,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return jsonError("NOT_FOUND", "Repository not found.", 404);
   }
 
-  const { overview } = getReleaseData();
+  const { overview } = await getReleaseData();
 
   return jsonOk({
     daily: overview.viewsVsClones.map((point) => ({
