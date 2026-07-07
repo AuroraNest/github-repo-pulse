@@ -4,7 +4,7 @@ RepoPulse is a self-hosted GitHub analytics dashboard for repository growth, rel
 
 - Repository: `https://github.com/AuroraNest/github-repo-pulse`
 - Production: `https://repopulse.auroramaple.com/overview`
-- Branches: `main` is the release branch, `dev` is the development branch.
+- Branch: `main` is the only maintained branch.
 
 ## English
 
@@ -61,7 +61,7 @@ RepoPulse 是一个自托管 GitHub 数据分析看板, 用于查看仓库增长
 
 - 代码仓库: `https://github.com/AuroraNest/github-repo-pulse`
 - 线上地址: `https://repopulse.auroramaple.com/overview`
-- 分支约定: `main` 是正式分支, `dev` 是开发分支.
+- 分支约定: 只维护 `main`.
 
 ### 包含内容
 
