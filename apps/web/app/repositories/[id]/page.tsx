@@ -1,11 +1,11 @@
 import { Download, ExternalLink, GitFork, Star, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { GrowthChart, TrafficChart } from "../../../components/charts";
-import { Card, Chip, EmptyState, SectionTitle } from "../../../components/ui";
+import { Card, Chip, EmptyState } from "../../../components/ui";
 import { getReleaseData, getRepositoryData, isGitHubConfigurationRequired } from "../../../lib/data-source";
 import { formatCompactNumber } from "../../../lib/format";
 import { translateVisibility, type Locale } from "../../../lib/i18n";
 import { getDictionary } from "../../../lib/locale";
+import { RepositoryDetailTabs } from "./repository-detail-tabs";
 import { RepositorySyncButton } from "./repository-sync-button";
 
 export const dynamic = "force-dynamic";
@@ -78,60 +78,35 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
         <RepoKpi label={t.repositoryDetail.kpis.downloadsToday} value={repo.todayDownloads} icon={Download} locale={locale} />
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {t.repositoryDetail.tabs.map((tab) => (
-          <button key={tab} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium">{tab}</button>
-        ))}
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Card>
-          <SectionTitle title={t.repositoryDetail.growthTitle} subtitle={t.repositoryDetail.growthSubtitle} />
-          <div className="mt-4">
-            {releaseData.overview.growthTrends.length > 0 ? <GrowthChart data={releaseData.overview.growthTrends} labels={{ stars: t.common.stars, forks: t.common.forks, downloads: t.common.downloads }} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
-          </div>
-        </Card>
-        <Card>
-          <SectionTitle title={t.overview.viewsVsClones} subtitle={t.repositoryDetail.trafficSubtitle} />
-          <div className="mt-4">
-            {releaseData.overview.viewsVsClones.length > 0 ? <TrafficChart data={releaseData.overview.viewsVsClones} labels={{ views: t.common.views, clones: t.common.clones }} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card>
-          <SectionTitle title={t.repositoryDetail.funnelTitle} subtitle={t.repositoryDetail.funnelSubtitle} />
-          <div className="mt-5 space-y-3">
-            <FunnelRow label={t.repositoryDetail.visitors} value={repo.visitors14d} locale={locale} />
-            <FunnelRow label={t.repositoryDetail.releasePageViews} value={Math.round(repo.visitors14d * 0.28)} locale={locale} />
-            <FunnelRow label={t.repositoryDetail.downloads} value={repo.todayDownloads * 7} locale={locale} />
-          </div>
-        </Card>
-        <Card>
-          <SectionTitle title={t.repositoryDetail.popularContent} />
-          <div className="mt-4 space-y-3 text-sm">
-            {["/README.md", "/releases", "/releases/tag/" + repo.latestRelease, "/tree/main/apps"].map((path) => (
-              <div key={path} className="flex justify-between rounded-lg bg-slate-50 px-3 py-2">
-                <span>{path}</span>
-                <span className="font-medium">{Math.round(repo.visitors14d / 6)}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card>
-          <SectionTitle title={t.repositoryDetail.releases} />
-          <div className="mt-4 space-y-3">
-            {assets.length > 0 ? assets.map((asset) => (
-              <div key={asset.id} className="rounded-lg border border-slate-100 p-3">
-                <div className="font-medium">{asset.tagName}</div>
-                <div className="truncate text-sm text-slate-500">{asset.assetName}</div>
-                <div className="mt-2 text-sm font-semibold">{formatCompactNumber(asset.totalDownloads, locale)} {t.common.downloads}</div>
-              </div>
-            )) : <EmptyState title={t.common.noReleases} description={sourceDescription} />}
-          </div>
-        </Card>
-      </div>
+      <RepositoryDetailTabs
+        assets={assets}
+        growthTrends={source.demo ? releaseData.overview.growthTrends : []}
+        labels={{
+          clones: t.common.clones,
+          downloads: t.common.downloads,
+          forks: t.common.forks,
+          funnelSubtitle: t.repositoryDetail.funnelSubtitle,
+          funnelTitle: t.repositoryDetail.funnelTitle,
+          growthSubtitle: t.repositoryDetail.growthSubtitle,
+          growthTitle: t.repositoryDetail.growthTitle,
+          noDataYet: t.common.noDataYet,
+          noReleases: t.common.noReleases,
+          popularContent: t.repositoryDetail.popularContent,
+          releasePageViews: t.repositoryDetail.releasePageViews,
+          releases: t.repositoryDetail.releases,
+          stars: t.common.stars,
+          tabs: t.repositoryDetail.tabs,
+          trafficSubtitle: t.repositoryDetail.trafficSubtitle,
+          visitors: t.repositoryDetail.visitors,
+          views: t.common.views,
+          viewsVsClones: t.overview.viewsVsClones
+        }}
+        locale={locale}
+        repo={repo}
+        sourceDescription={sourceDescription}
+        trafficTrends={source.demo ? releaseData.overview.viewsVsClones : []}
+        useDemoContent={source.demo}
+      />
     </div>
   );
 }
@@ -149,19 +124,5 @@ function RepoKpi({ label, value, icon: Icon, locale }: { label: string; value: n
         </div>
       </div>
     </Card>
-  );
-}
-
-function FunnelRow({ label, value, locale }: { label: string; value: number; locale: Locale }) {
-  return (
-    <div>
-      <div className="mb-1 flex justify-between text-sm">
-        <span className="text-slate-500">{label}</span>
-        <span className="font-medium">{formatCompactNumber(value, locale)}</span>
-      </div>
-      <div className="h-2 rounded-full bg-slate-100">
-        <div className="h-2 rounded-full bg-blue-600" style={{ width: `${Math.max(16, Math.min(100, value / 40))}%` }} />
-      </div>
-    </div>
   );
 }
