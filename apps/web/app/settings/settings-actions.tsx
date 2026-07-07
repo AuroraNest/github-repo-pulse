@@ -48,6 +48,36 @@ export function SettingsActions({ kind, labels, locale }: SettingsActionsProps) 
     }
   }
 
+  async function exportCsv() {
+    setBusy("export");
+    setDeleteArmed(false);
+    setFeedback(null);
+
+    try {
+      const response = await fetch("/api/settings/export", { method: "POST" });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        setFeedback({ tone: "red", message: payload?.error?.message || copy.failed });
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filenameFromDisposition(response.headers.get("Content-Disposition")) || "repopulse-analytics.csv";
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setFeedback({ tone: "green", message: copy.exported });
+    } catch (error) {
+      setFeedback({ tone: "red", message: error instanceof Error ? error.message : copy.failed });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (kind === "github") {
     return (
       <div className="mt-4">
@@ -67,7 +97,7 @@ export function SettingsActions({ kind, labels, locale }: SettingsActionsProps) 
   return (
     <div>
       <div className="flex flex-wrap gap-2">
-        <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium disabled:opacity-60" disabled={busy !== null} onClick={() => run("export", () => fetch("/api/settings/export", { method: "POST" }))} type="button">
+        <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium disabled:opacity-60" disabled={busy !== null} onClick={exportCsv} type="button">
           {busy === "export" ? copy.working : labels.exportCsv}
         </button>
         <button
@@ -96,11 +126,16 @@ function FeedbackMessage({ feedback }: { feedback: Feedback }) {
   return <div className={`mt-3 rounded-lg border px-3 py-2 text-sm ${tone}`}>{feedback.message}</div>;
 }
 
+function filenameFromDisposition(disposition: string | null) {
+  return disposition?.match(/filename="([^"]+)"/)?.[1] || null;
+}
+
 const zhCopy = {
   confirmDelete: "确认删除",
   deleteConfirm: "再次点击确认删除. 当前版本仍会被后端保护, 不会实际删除数据.",
   deleteGuarded: "删除接口已受保护, 当前版本不会执行实际删除.",
   done: "操作已完成.",
+  exported: "CSV 已准备下载.",
   failed: "操作失败.",
   working: "处理中..."
 };
@@ -110,6 +145,7 @@ const enCopy = {
   deleteConfirm: "Click again to confirm deletion. The backend still guards this version and will not delete data.",
   deleteGuarded: "Deletion is guarded; this version does not delete data.",
   done: "Action completed.",
+  exported: "CSV is ready to download.",
   failed: "Action failed.",
   working: "Working..."
 };
