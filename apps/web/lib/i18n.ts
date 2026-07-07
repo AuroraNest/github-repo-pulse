@@ -182,7 +182,7 @@ export const dictionary = {
       dailyDownloadsByRepo: "Daily New Downloads by Repository",
       topAssets: "Top Assets",
       releaseAssets: "Release Assets",
-      releaseAssetsSubtitle: "Sortable MVP table with demo data fallback.",
+      releaseAssetsSubtitle: "Search, filter, and sort release assets from tracked repositories.",
       filters: ["repository", "tag", "asset type", "date range", "min downloads"],
       columns: ["Repository", "Version / Tag", "Asset Name", "Asset Size", "Published Date", "Total Downloads", "Today", "7-Day", "30-Day", "Status", "Actions"],
       today: "today"
@@ -432,7 +432,7 @@ export const dictionary = {
       dailyDownloadsByRepo: "按仓库统计的每日新增下载",
       topAssets: "热门资产",
       releaseAssets: "发布资产",
-      releaseAssetsSubtitle: "带 demo 数据兜底的可排序 MVP 表格.",
+      releaseAssetsSubtitle: "搜索, 筛选并排序已跟踪仓库的发布资产.",
       filters: ["仓库", "tag", "资产类型", "日期范围", "最小下载量"],
       columns: ["仓库", "版本 / Tag", "资产名称", "资产大小", "发布时间", "总下载量", "今日", "7 天", "30 天", "状态", "操作"],
       today: "今日"
