@@ -3,10 +3,17 @@ import type { ReactNode } from "react";
 import { Card, Chip, SectionTitle } from "../../components/ui";
 import { getGitHubDataSource } from "../../lib/data-source";
 import { getDictionary } from "../../lib/locale";
+import { SettingsActions } from "./settings-actions";
 
 export default async function SettingsPage() {
-  const { t } = await getDictionary();
+  const { locale, t } = await getDictionary();
   const githubSource = await getGitHubDataSource();
+  const actionLabels = {
+    deleteAllData: t.settings.deleteAllData,
+    exportCsv: t.settings.exportCsv,
+    reverifyToken: t.settings.reverifyToken,
+    rotateToken: t.settings.rotateToken
+  };
 
   return (
     <div className="space-y-6">
@@ -23,10 +30,7 @@ export default async function SettingsPage() {
             {githubSource.mode === "live" ? <Chip>{t.common.liveGitHub}</Chip> : null}
             {!githubSource.configured ? <Chip tone="red">{t.common.githubConfigurationRequired}</Chip> : null}
           </div>
-          <div className="mt-4 flex gap-2">
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">{t.settings.reverifyToken}</button>
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">{t.settings.rotateToken}</button>
-          </div>
+          <SettingsActions kind="github" labels={actionLabels} locale={locale} />
         </SettingsCard>
 
         <SettingsCard icon={Timer} title={t.settings.syncTitle} subtitle={t.settings.syncSubtitle}>
@@ -61,10 +65,7 @@ export default async function SettingsPage() {
         </SettingsCard>
 
         <SettingsCard icon={ShieldAlert} title={t.settings.privacyTitle} subtitle={t.settings.privacySubtitle}>
-          <div className="flex flex-wrap gap-2">
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">{t.settings.exportCsv}</button>
-            <button className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{t.settings.deleteAllData}</button>
-          </div>
+          <SettingsActions kind="privacy" labels={actionLabels} locale={locale} />
         </SettingsCard>
       </div>
     </div>

@@ -1,14 +1,9 @@
 import { verifyGitHubToken } from "@repopulse/core";
-import { NextRequest } from "next/server";
 import { jsonError, jsonOk } from "../../../../../lib/api";
 import { getGitHubDataSource, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
 import { readGitHubRuntimeConfig } from "../../../../../lib/runtime-github-token";
-import { requireSession } from "../../../../../lib/session";
 
-export async function POST(request: NextRequest) {
-  const session = requireSession(request);
-  if (!session.ok) return session.response;
-
+export async function POST() {
   const config = await readGitHubRuntimeConfig();
   const source = await getGitHubDataSource();
   if (isGitHubConfigurationRequired(source)) {
