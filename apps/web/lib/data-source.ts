@@ -6,6 +6,7 @@ import {
   mockReports,
   mockRepositories,
   mockSyncRuns,
+  type ActivityEvent,
   type OverviewData,
   type ReleaseAssetSummary,
   type ReportData,
@@ -76,7 +77,8 @@ export async function getOverviewData(): Promise<{ source: GitHubDataSource; ove
     return { source, overview: mockOverview };
   }
 
-  return { source, overview: buildOverview(getTrackedRepositories(repositories), []) };
+  const runs = await readSyncRuns(5).catch(() => []);
+  return { source, overview: buildOverview(getTrackedRepositories(repositories), [], buildSyncActivity(runs)) };
 }
 
 export async function getReportGenerationData(): Promise<{ source: GitHubDataSource; overview: OverviewData; repositories: RepositorySummary[]; assets: ReleaseAssetSummary[] }> {
@@ -181,7 +183,7 @@ async function readRuntimeSource(): Promise<RuntimeSource> {
   };
 }
 
-function buildOverview(repositories: RepositorySummary[], assets: ReleaseAssetSummary[]): OverviewData {
+function buildOverview(repositories: RepositorySummary[], assets: ReleaseAssetSummary[], activityFeed: ActivityEvent[] = []): OverviewData {
   const emptyTrend: TrendPoint[] = [];
 
   return {
@@ -207,8 +209,18 @@ function buildOverview(repositories: RepositorySummary[], assets: ReleaseAssetSu
         metricValue: repo.stars
       })),
     topReleases: assets,
-    activityFeed: []
+    activityFeed
   };
+}
+
+function buildSyncActivity(runs: Awaited<ReturnType<typeof readSyncRuns>>): ActivityEvent[] {
+  return runs.map((run) => ({
+    id: `activity-${run.id}`,
+    title: run.status === "success" ? "Sync completed" : run.status === "partial_failed" ? "Sync partially completed" : "Sync failed",
+    repository: `${run.successCount}/${run.totalRepositories} repositories synced`,
+    severity: run.status === "success" ? "success" : run.status === "partial_failed" ? "warning" : "error",
+    happenedAt: run.finishedAt || run.startedAt
+  }));
 }
 
 function getTrackedRepositories(repositories: RepositorySummary[]) {
