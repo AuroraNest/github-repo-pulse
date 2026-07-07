@@ -13,6 +13,8 @@ type SetupClientProps = {
   common: Dictionary["common"];
   initialRepositories: RepositorySummary[];
   initialSource: GitHubDataSource;
+  initialSyncCron: string;
+  initialSyncTimezone: string;
   locale: Locale;
   setup: Dictionary["setup"];
 };
@@ -35,7 +37,7 @@ type Feedback = {
   message: string;
 };
 
-export function SetupClient({ common, initialRepositories, initialSource, locale, setup }: SetupClientProps) {
+export function SetupClient({ common, initialRepositories, initialSource, initialSyncCron, initialSyncTimezone, locale, setup }: SetupClientProps) {
   const router = useRouter();
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
@@ -156,8 +158,8 @@ export function SetupClient({ common, initialRepositories, initialSource, locale
         selectedRepositoryIds: Array.from(selectedIds),
         trackAll: false,
         includePrivate,
-        syncCron: "0 8 * * *",
-        syncTimezone: "UTC",
+        syncCron: initialSyncCron,
+        syncTimezone: initialSyncTimezone,
         dataRetentionDays: 365
       });
 
@@ -298,8 +300,8 @@ export function SetupClient({ common, initialRepositories, initialSource, locale
         <Card>
           <StepHeader step="3" title={setup.scheduleTitle} subtitle={setup.scheduleSubtitle} />
           <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <Field label={setup.dailySyncTime} value="08:00" />
-            <Field label={setup.timezone} value="UTC" />
+            <Field label={setup.dailySyncTime} value={cronToTime(initialSyncCron)} />
+            <Field label={setup.timezone} value={initialSyncTimezone} />
             <Field label={setup.dataRetention} value={setup.retentionValue} />
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
@@ -369,6 +371,11 @@ async function parseApiResponse<T>(response: Response): Promise<ApiResponse<T>> 
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Request failed.";
+}
+
+function cronToTime(cron: string) {
+  const [minute = "0", hour = "8"] = cron.split(" ");
+  return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
 }
 
 function FeedbackMessage({ feedback }: { feedback: Feedback }) {
