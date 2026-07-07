@@ -3,16 +3,12 @@ import { NextRequest } from "next/server";
 import { jsonError, jsonOk } from "../../../../../lib/api";
 import { getRepositoryData, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
 import { readGitHubRuntimeConfig } from "../../../../../lib/runtime-github-token";
-import { requireSession } from "../../../../../lib/session";
 
 type RouteContext = {
   params: Promise<{ id: string }> | { id: string };
 };
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  const session = requireSession(request);
-  if (!session.ok) return session.response;
-
   const { id } = await context.params;
   const { source, repository } = await getRepositoryData(id);
   if (isGitHubConfigurationRequired(source)) {

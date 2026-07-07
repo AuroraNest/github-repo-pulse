@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
 import { getRepositoryData, isGitHubConfigurationRequired } from "../../../../lib/data-source";
-import { requireSession } from "../../../../lib/session";
 
 type RouteContext = {
   params: Promise<{ id: string }> | { id: string };
@@ -28,9 +27,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const session = requireSession(request);
-  if (!session.ok) return session.response;
-
   const { id } = await context.params;
   const { source, repository } = await getRepositoryData(id);
   if (isGitHubConfigurationRequired(source)) {

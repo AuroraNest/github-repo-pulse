@@ -126,7 +126,17 @@ export const dictionary = {
       fastestGrowing: "Fastest Growing",
       tabs: ["All", "Active", "Private", "Public", "Favorites"],
       filters: ["Language", "Growth", "Traffic", "Release Enabled", "More filters"],
-      columns: ["Repository", "Visibility", "Language", "Stars", "Forks", "14-Day Visitors", "14-Day Clones", "Total Downloads", "Latest Release", "Last Sync", "Status", "Actions"]
+      columns: ["Repository", "Visibility", "Language", "Stars", "Forks", "14-Day Visitors", "14-Day Clones", "Total Downloads", "Latest Release", "Last Sync", "Status", "Actions"],
+      favorite: "Favorite",
+      noMatchingRepositories: "No repositories match the current filters.",
+      pauseTracking: "Pause",
+      resumeTracking: "Track",
+      sortBy: "Sort by",
+      syncFailed: "Action failed.",
+      syncNow: "Sync now",
+      syncQueued: "updated.",
+      unfavorite: "Unfavorite",
+      working: "Working..."
     },
     repositoryDetail: {
       syncNow: "Sync now",
@@ -357,7 +367,17 @@ export const dictionary = {
       fastestGrowing: "增长最快",
       tabs: ["全部", "活跃", "私有", "公开", "收藏"],
       filters: ["语言", "增长", "流量", "已启用发布", "更多筛选"],
-      columns: ["仓库", "可见性", "语言", "Stars", "Forks", "14 天访客", "14 天克隆", "总下载量", "最新发布", "上次同步", "状态", "操作"]
+      columns: ["仓库", "可见性", "语言", "Stars", "Forks", "14 天访客", "14 天克隆", "总下载量", "最新发布", "上次同步", "状态", "操作"],
+      favorite: "收藏",
+      noMatchingRepositories: "没有仓库符合当前筛选.",
+      pauseTracking: "暂停",
+      resumeTracking: "跟踪",
+      sortBy: "排序",
+      syncFailed: "操作失败.",
+      syncNow: "立即同步",
+      syncQueued: "已更新.",
+      unfavorite: "取消收藏",
+      working: "处理中..."
     },
     repositoryDetail: {
       syncNow: "立即同步",
