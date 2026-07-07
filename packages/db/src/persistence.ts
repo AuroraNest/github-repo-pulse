@@ -68,6 +68,28 @@ type TrackedRepositoryRow = RowDataPacket & {
   id: string;
 };
 
+type ReportRow = RowDataPacket & {
+  id: string;
+  report_type: "daily" | "weekly" | "monthly";
+  title: string;
+  summary: string;
+  data_json: unknown;
+  markdown_content: string;
+  ai_generated: number | boolean;
+  created_at: Date | string;
+};
+
+export type PersistedReport = {
+  id: string;
+  type: "daily" | "weekly" | "monthly";
+  title: string;
+  generatedAt: string;
+  summary: string;
+  data: unknown;
+  markdown: string;
+  aiGenerated: boolean;
+};
+
 export function defaultAppSettings(): AppSettings {
   return {
     setupCompleted: false,
@@ -272,8 +294,78 @@ export async function saveRepositories(input: {
   }
 }
 
+export async function readReports(limit = 20): Promise<PersistedReport[]> {
+  const pool = await createPool();
+  try {
+    const [rows] = await pool.query<ReportRow[]>(
+      `SELECT id, report_type, title, summary, data_json, markdown_content, ai_generated, created_at
+       FROM reports
+       ORDER BY created_at DESC
+       LIMIT ?`,
+      [limit]
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      type: row.report_type,
+      title: row.title,
+      generatedAt: toIsoString(row.created_at),
+      summary: row.summary,
+      data: row.data_json,
+      markdown: row.markdown_content,
+      aiGenerated: Boolean(row.ai_generated)
+    }));
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function saveReport(input: {
+  id: string;
+  type: "daily" | "weekly" | "monthly";
+  title: string;
+  generatedAt: string;
+  summary: string;
+  data: unknown;
+  markdown: string;
+  aiGenerated: boolean;
+}) {
+  const pool = await createPool();
+  try {
+    await pool.execute<ResultSetHeader>(
+      `INSERT INTO reports (id, report_type, period_start, period_end, title, summary, data_json, markdown_content, ai_generated, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         title = VALUES(title),
+         summary = VALUES(summary),
+         data_json = VALUES(data_json),
+         markdown_content = VALUES(markdown_content),
+         ai_generated = VALUES(ai_generated),
+         created_at = VALUES(created_at)`,
+      [
+        input.id,
+        input.type,
+        input.generatedAt.slice(0, 10),
+        input.generatedAt.slice(0, 10),
+        input.title,
+        input.summary,
+        JSON.stringify(input.data),
+        input.markdown,
+        input.aiGenerated,
+        toMysqlDateTime(input.generatedAt)
+      ]
+    );
+  } finally {
+    await pool.end();
+  }
+}
+
 function toMysqlDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+function toIsoString(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toISOString();
 }

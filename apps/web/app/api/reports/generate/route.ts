@@ -1,4 +1,5 @@
 import { generateDailyReport, readRuntimeConfig } from "@repopulse/core";
+import { saveReport } from "@repopulse/db";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
@@ -28,6 +29,16 @@ export async function POST(request: NextRequest) {
     repositories: reportData.repositories,
     assets: reportData.assets,
     aiEnabled: body.data.useAI && config.aiEnabled
+  });
+  await saveReport({
+    id: report.id,
+    type: report.type,
+    title: report.title,
+    generatedAt: report.generatedAt,
+    summary: report.summary,
+    data: report,
+    markdown: report.markdown,
+    aiGenerated: report.aiGenerated
   });
 
   return jsonOk({ report });

@@ -14,6 +14,7 @@ import {
   type SyncRun,
   type TrendPoint
 } from "@repopulse/core";
+import { readReports } from "@repopulse/db";
 import { readGitHubRuntimeConfig } from "./runtime-github-token";
 import { applyRuntimeSetupState, getSetupState } from "./runtime-setup-state";
 
@@ -103,7 +104,10 @@ export async function getReleaseData(): Promise<{ source: GitHubDataSource; asse
 
 export async function getReportData(): Promise<{ source: GitHubDataSource; reports: ReportData[] }> {
   const source = await getGitHubDataSource();
-  return { source, reports: source.demo ? mockReports : [] };
+  if (source.demo) return { source, reports: mockReports };
+
+  const reports = await readReports().catch(() => []);
+  return { source, reports: reports.map(toReportData) };
 }
 
 export async function getSyncRunData(): Promise<{ source: GitHubDataSource; runs: SyncRun[] }> {
@@ -198,4 +202,22 @@ function getTrackedRepositories(repositories: RepositorySummary[]) {
 function isRecoverableGitHubError(error: unknown) {
   const status = typeof error === "object" && error && "status" in error ? Number((error as { status: unknown }).status) : undefined;
   return status === 401 || status === 403 || status === 429;
+}
+
+function toReportData(report: Awaited<ReturnType<typeof readReports>>[number]): ReportData {
+  const data = report.data as Partial<ReportData>;
+  return {
+    id: report.id,
+    type: report.type,
+    title: report.title,
+    generatedAt: typeof data.generatedAt === "string" ? data.generatedAt : report.generatedAt,
+    summary: report.summary,
+    kpis: Array.isArray(data.kpis) ? data.kpis as ReportData["kpis"] : [],
+    highlights: Array.isArray(data.highlights) ? data.highlights as string[] : [],
+    anomalies: Array.isArray(data.anomalies) ? data.anomalies as string[] : [],
+    fastestMovers: Array.isArray(data.fastestMovers) ? data.fastestMovers as ReportData["fastestMovers"] : [],
+    suggestedActions: Array.isArray(data.suggestedActions) ? data.suggestedActions as string[] : [],
+    markdown: report.markdown,
+    aiGenerated: report.aiGenerated
+  };
 }
