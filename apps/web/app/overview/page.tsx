@@ -125,10 +125,10 @@ export default async function OverviewPage() {
             {overview.activityFeed.length > 0 ? overview.activityFeed.map((event) => (
               <div key={event.id} className="rounded-lg border border-slate-100 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium">{event.title}</p>
+                  <p className="text-sm font-medium">{formatActivityTitle(event.title, t.overview)}</p>
                   <Chip tone={event.severity === "warning" ? "yellow" : event.severity === "success" ? "green" : "slate"}>{translateStatus(event.severity, locale)}</Chip>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">{event.repository}</p>
+                <p className="mt-1 text-xs text-slate-500">{formatActivityRepository(event.repository, t.overview)}</p>
               </div>
             )) : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
           </div>
@@ -138,4 +138,17 @@ export default async function OverviewPage() {
       ) : null}
     </div>
   );
+}
+
+function formatActivityTitle(title: string, labels: { syncCompleted: string; syncFailed: string; syncPartiallyCompleted: string }) {
+  if (title === "Sync completed") return labels.syncCompleted;
+  if (title === "Sync failed") return labels.syncFailed;
+  if (title === "Sync partially completed") return labels.syncPartiallyCompleted;
+  return title;
+}
+
+function formatActivityRepository(repository: string, labels: { syncedRepositories: string }) {
+  const match = repository.match(/^(\d+)\/(\d+) repositories synced$/);
+  if (!match) return repository;
+  return labels.syncedRepositories.replace("{success}", match[1]).replace("{total}", match[2]);
 }

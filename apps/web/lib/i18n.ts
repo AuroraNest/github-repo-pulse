@@ -127,7 +127,11 @@ export const dictionary = {
       aggregated: "Aggregated",
       fastestGrowing: "Fastest Growing Repositories",
       topReleases: "Top Releases",
-      activityFeed: "Activity Feed"
+      activityFeed: "Activity Feed",
+      syncCompleted: "Sync completed",
+      syncFailed: "Sync failed",
+      syncPartiallyCompleted: "Sync partially completed",
+      syncedRepositories: "{success}/{total} repositories synced"
     },
     repositories: {
       title: "Repositories",
@@ -377,7 +381,11 @@ export const dictionary = {
       aggregated: "聚合",
       fastestGrowing: "增长最快仓库",
       topReleases: "热门发布",
-      activityFeed: "活动动态"
+      activityFeed: "活动动态",
+      syncCompleted: "同步完成",
+      syncFailed: "同步失败",
+      syncPartiallyCompleted: "同步部分完成",
+      syncedRepositories: "{success}/{total} 个仓库已同步"
     },
     repositories: {
       title: "仓库",
