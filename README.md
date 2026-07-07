@@ -1,12 +1,16 @@
 # RepoPulse
 
-RepoPulse is a self-hosted GitHub analytics dashboard for repository growth, release downloads, traffic, sync history, and rule-based reports. The web app supports runtime English and Chinese switching through a small cookie-backed locale layer.
+RepoPulse is a self-hosted GitHub analytics dashboard for repository growth, release downloads, traffic, sync history, and rule-based reports.
+
+- Repository: `https://github.com/AuroraNest/github-repo-pulse`
+- Production: `https://repopulse.auroramaple.com/overview`
+- Branches: `main` is the release branch, `dev` is the development branch.
 
 ## English
 
 ### What it includes
 
-- `apps/web`: Next.js TypeScript app with Tailwind UI, API routes, runtime locale switching, and explicit demo-data mode.
+- `apps/web`: Next.js TypeScript app with Tailwind UI, API routes, runtime English/Chinese switching, and explicit demo-data mode.
 - `apps/worker`: Node.js worker skeleton for scheduled and manual sync jobs.
 - `packages/core`: shared contracts, mock data, GitHub collector skeleton, metrics, and report helpers.
 - `packages/db`: MySQL-first schema, migration, and client helpers.
@@ -41,9 +45,23 @@ pnpm --filter @repopulse/web build
 
 Run `packages/db/src/migrations/0001_initial.sql` only against a local MySQL database after replacing placeholders with local-only credentials. Do not use real production database configuration in this repo.
 
+### Docker
+
+```bash
+export DOCKER_REGISTRY_USER=your-user
+export DOCKER_REGISTRY_PASSWORD=your-password
+./push-private-registry-images.sh 0.1.0
+```
+
+By default the image is pushed to `docker.auroramaple.com/aurora/github-repo-pulse/web`. Override `PROJECT_SLUG` only when publishing under a different registry path.
+
 ## 中文
 
-RepoPulse 是一个自托管 GitHub 数据分析看板, 用于查看仓库增长, release 下载, traffic, 同步历史和规则生成报告.Web app 支持运行时中英文切换, 通过轻量 cookie locale 层实现.
+RepoPulse 是一个自托管 GitHub 数据分析看板, 用于查看仓库增长, release 下载, traffic, 同步历史和规则生成报告.
+
+- 代码仓库: `https://github.com/AuroraNest/github-repo-pulse`
+- 线上地址: `https://repopulse.auroramaple.com/overview`
+- 分支约定: `main` 是正式分支, `dev` 是开发分支.
 
 ### 包含内容
 
@@ -81,3 +99,13 @@ pnpm --filter @repopulse/web build
 ```
 
 只在替换为本地专用凭据后, 才对本地 MySQL 数据库运行 `packages/db/src/migrations/0001_initial.sql`.不要在这个 repo 中写入真实生产数据库配置.
+
+### Docker
+
+```bash
+export DOCKER_REGISTRY_USER=your-user
+export DOCKER_REGISTRY_PASSWORD=your-password
+./push-private-registry-images.sh 0.1.0
+```
+
+默认镜像推送到 `docker.auroramaple.com/aurora/github-repo-pulse/web`.只有需要发布到不同 registry 路径时才覆盖 `PROJECT_SLUG`.

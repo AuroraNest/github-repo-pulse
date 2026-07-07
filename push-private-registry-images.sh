@@ -6,9 +6,7 @@ NAMESPACE="${NAMESPACE:-aurora}"
 PLATFORM="${PLATFORM:-linux/amd64}"
 VERSION="${1:-0.1.0}"
 
-REPO_NAME="$(basename "$PWD")"
-DEFAULT_PROJECT_SLUG="$(printf '%s' "$REPO_NAME" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_.-' '-')"
-PROJECT_SLUG="${PROJECT_SLUG:-$DEFAULT_PROJECT_SLUG}"
+PROJECT_SLUG="${PROJECT_SLUG:-github-repo-pulse}"
 WEB_IMAGE="${REGISTRY}/${NAMESPACE}/${PROJECT_SLUG}/web"
 
 echo "${DOCKER_REGISTRY_PASSWORD:?DOCKER_REGISTRY_PASSWORD 未设置}" \
