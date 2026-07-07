@@ -14,6 +14,7 @@ type ReportsActionsProps = {
     regenerate: string;
   };
   locale: Locale;
+  onReportChange?: (report: ReportData) => void;
 };
 
 type Feedback = {
@@ -21,8 +22,7 @@ type Feedback = {
   message: string;
 };
 
-export function ReportsActions({ initialReport, labels, locale }: ReportsActionsProps) {
-  const [report, setReport] = useState<ReportData | null>(initialReport);
+export function ReportsActions({ initialReport, labels, locale, onReportChange }: ReportsActionsProps) {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const copy = locale === "zh" ? zhCopy : enCopy;
@@ -47,7 +47,7 @@ export function ReportsActions({ initialReport, labels, locale }: ReportsActions
         return null;
       }
 
-      setReport(payload.data.report);
+      onReportChange?.(payload.data.report);
       setFeedback({ tone: "green", message: copy.generated.replace("{title}", payload.data.report.title) });
       return payload.data.report;
     } catch (error) {
@@ -61,7 +61,7 @@ export function ReportsActions({ initialReport, labels, locale }: ReportsActions
   async function exportReport(format: "json" | "markdown") {
     setBusy(format);
     setFeedback(null);
-    const activeReport = report || await generateReport();
+    const activeReport = initialReport || await generateReport();
     if (!activeReport) {
       setBusy(null);
       return;
@@ -100,7 +100,7 @@ export function ReportsActions({ initialReport, labels, locale }: ReportsActions
         </button>
       </div>
       {feedback ? <FeedbackMessage feedback={feedback} /> : null}
-      {report ? <p className="max-w-3xl text-sm text-slate-500">{report.summary}</p> : null}
+      {initialReport ? <p className="max-w-3xl text-sm text-slate-500">{initialReport.summary}</p> : null}
     </div>
   );
 }
