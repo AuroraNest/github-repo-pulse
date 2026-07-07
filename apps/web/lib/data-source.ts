@@ -75,15 +75,16 @@ export async function getOverviewData(): Promise<{ source: GitHubDataSource; ove
     return { source, overview: mockOverview };
   }
 
-  return { source, overview: buildOverview(repositories, []) };
+  return { source, overview: buildOverview(getTrackedRepositories(repositories), []) };
 }
 
 export async function getReportGenerationData(): Promise<{ source: GitHubDataSource; overview: OverviewData; repositories: RepositorySummary[]; assets: ReleaseAssetSummary[] }> {
   const { source, repositories } = await getRepositoryCollection();
   const assets = source.demo ? mockReleaseAssets : [];
-  const overview = source.demo ? mockOverview : buildOverview(repositories, assets);
+  const trackedRepositories = source.demo ? repositories : getTrackedRepositories(repositories);
+  const overview = source.demo ? mockOverview : buildOverview(trackedRepositories, assets);
 
-  return { source, overview, repositories, assets };
+  return { source, overview, repositories: trackedRepositories, assets };
 }
 
 export async function getRepositoryData(id: string): Promise<{ source: GitHubDataSource; repository?: RepositorySummary; repositories: RepositorySummary[] }> {
@@ -188,6 +189,10 @@ function buildOverview(repositories: RepositorySummary[], assets: ReleaseAssetSu
     topReleases: assets,
     activityFeed: []
   };
+}
+
+function getTrackedRepositories(repositories: RepositorySummary[]) {
+  return repositories.filter((repo) => repo.tracked);
 }
 
 function isRecoverableGitHubError(error: unknown) {
