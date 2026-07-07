@@ -110,7 +110,7 @@ function Topbar({ labels, locale, githubSource }: { labels: Dictionary; locale: 
         <div className="flex flex-wrap items-center gap-2">
           <TopbarControls labels={labels.common} status={status} />
           <Chip tone={status.tone}>{status.chip}</Chip>
-          <Chip tone="slate">{githubSource.demo ? labels.common.lastSync : labels.common.noDataYet}</Chip>
+          {githubSource.demo ? <Chip tone="slate">{labels.common.lastSync}</Chip> : null}
           <LanguageSwitcher locale={locale} labels={labels.common} />
           <Link href="/setup" className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white">
             <Activity size={16} />
