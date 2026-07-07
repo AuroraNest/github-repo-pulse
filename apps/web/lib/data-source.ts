@@ -1,6 +1,7 @@
 import {
   findRepository,
   listAccessibleRepositories,
+  listReleaseAssetsForRepositories,
   mockOverview,
   mockReleaseAssets,
   mockReports,
@@ -96,12 +97,20 @@ export async function getRepositoryData(id: string): Promise<{ source: GitHubDat
 }
 
 export async function getReleaseData(): Promise<{ source: GitHubDataSource; assets: ReleaseAssetSummary[]; overview: OverviewData }> {
-  const source = await getGitHubDataSource();
+  const { config, source } = await readRuntimeSource();
   if (source.demo) {
     return { source, assets: mockReleaseAssets, overview: mockOverview };
   }
 
-  return { source, assets: [], overview: buildOverview([], []) };
+  const { repositories } = await getRepositoryCollection();
+  const trackedRepositories = getTrackedRepositories(repositories);
+  const assets = await listReleaseAssetsForRepositories(trackedRepositories, {
+    token: config.githubToken,
+    baseUrl: config.githubApiBaseUrl,
+    mock: false
+  }).catch(() => []);
+
+  return { source, assets, overview: buildOverview(trackedRepositories, assets) };
 }
 
 export async function getReportData(): Promise<{ source: GitHubDataSource; reports: ReportData[] }> {

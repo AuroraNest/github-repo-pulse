@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { mockRepositories } from "../mock-data";
-import type { RepositorySummary } from "../types";
+import type { ReleaseAssetSummary, RepositorySummary } from "../types";
 
 export type GitHubClientOptions = {
   token?: string;
@@ -188,6 +188,41 @@ export async function syncRepositorySkeleton(repository: RepositorySummary, opti
   };
 }
 
+export async function listReleaseAssetsForRepositories(repositories: RepositorySummary[], options: GitHubClientOptions): Promise<ReleaseAssetSummary[]> {
+  if (options.mock) return [];
+
+  const client = createGitHubClient(options);
+  if (!client) {
+    throw new GitHubConfigurationRequiredError();
+  }
+
+  const assets: ReleaseAssetSummary[] = [];
+  for (const repository of repositories) {
+    const releases = await client.rest.repos.listReleases({ owner: repository.owner, repo: repository.name, per_page: 30 }).catch(() => ({ data: [] }));
+    for (const release of releases.data) {
+      for (const asset of release.assets || []) {
+        assets.push({
+          id: `github-asset-${asset.id}`,
+          repositoryId: repository.id,
+          repository: repository.name,
+          tagName: release.tag_name,
+          assetName: asset.name,
+          assetSize: formatBytes(asset.size || 0),
+          publishedAt: asset.created_at || release.published_at || release.created_at || "",
+          totalDownloads: asset.download_count || 0,
+          todayDownloads: 0,
+          sevenDayDownloads: 0,
+          thirtyDayDownloads: 0,
+          status: "Baseline captured",
+          browserDownloadUrl: asset.browser_download_url
+        });
+      }
+    }
+  }
+
+  return assets;
+}
+
 export function maskToken(token: string) {
   if (token.length <= 8) {
     return "github_pat_****";
@@ -213,4 +248,11 @@ function classifyGitHubError(error: unknown): RepositorySyncResult["errorCode"] 
   if (status === 403) return "GITHUB_FORBIDDEN";
   if (status === 429) return "GITHUB_RATE_LIMITED";
   return "UNKNOWN";
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
 }
