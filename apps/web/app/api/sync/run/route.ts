@@ -1,8 +1,9 @@
-import { readRuntimeConfig, syncRepositorySkeleton } from "@repopulse/core";
+import { syncRepositorySkeleton } from "@repopulse/core";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
 import { getRepositoryCollection, isGitHubConfigurationRequired } from "../../../../lib/data-source";
+import { readGitHubRuntimeConfig } from "../../../../lib/runtime-github-token";
 import { requireSession } from "../../../../lib/session";
 
 const syncSchema = z.object({
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     return jsonError("VALIDATION_ERROR", "Sync payload is invalid.", 400, body.error.flatten());
   }
 
-  const config = readRuntimeConfig();
+  const config = await readGitHubRuntimeConfig();
   const { source, repositories: allRepositories } = await getRepositoryCollection();
   if (isGitHubConfigurationRequired(source)) {
     return jsonError("GITHUB_CONFIGURATION_REQUIRED", source.message, 409);

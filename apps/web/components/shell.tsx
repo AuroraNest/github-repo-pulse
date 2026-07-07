@@ -14,8 +14,9 @@ const navItems = [
   { href: "/settings", labelKey: "settings", icon: Settings }
 ] as const;
 
-export function AppShell({ children, labels, locale, githubSource }: { children: ReactNode; labels: Dictionary; locale: Locale; githubSource: GitHubDataSource }) {
+export function AppShell({ children, labels, locale, githubSource, trackedRepositoriesCount }: { children: ReactNode; labels: Dictionary; locale: Locale; githubSource: GitHubDataSource; trackedRepositoriesCount: number }) {
   const status = getSourceStatus(labels, githubSource);
+  const displayedTrackedCount = githubSource.demo && trackedRepositoriesCount === 0 ? 4 : trackedRepositoriesCount;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -55,7 +56,7 @@ export function AppShell({ children, labels, locale, githubSource }: { children:
               <Star size={14} />
               {labels.common.tracking}
             </div>
-            <p className="mt-2 text-2xl font-semibold">{githubSource.demo ? "4" : githubSource.configured ? "-" : "0"}</p>
+            <p className="mt-2 text-2xl font-semibold">{githubSource.configured ? displayedTrackedCount.toLocaleString(locale === "zh" ? "zh-CN" : "en-US") : "0"}</p>
             <p className="text-xs text-slate-500">{labels.common.repositoriesEnabled}</p>
           </div>
         </div>

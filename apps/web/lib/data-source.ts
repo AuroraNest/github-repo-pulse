@@ -6,7 +6,6 @@ import {
   mockReports,
   mockRepositories,
   mockSyncRuns,
-  readRuntimeConfig,
   type OverviewData,
   type ReleaseAssetSummary,
   type ReportData,
@@ -15,7 +14,8 @@ import {
   type SyncRun,
   type TrendPoint
 } from "@repopulse/core";
-import { getRuntimeGitHubToken } from "./runtime-github-token";
+import { readGitHubRuntimeConfig } from "./runtime-github-token";
+import { applyRuntimeSetupState, getRuntimeSetupState } from "./runtime-setup-state";
 
 export type GitHubDataMode = "configuration_required" | "demo" | "live";
 
@@ -51,7 +51,7 @@ export async function getRepositoryCollection(): Promise<{ source: GitHubDataSou
       mock: source.demo
     });
 
-    return { source, repositories };
+    return { source, repositories: applyRuntimeSetupState(repositories, await getRuntimeSetupState()) };
   } catch (error) {
     if (isRecoverableGitHubError(error)) {
       return {
@@ -124,8 +124,7 @@ export function githubDataSourcePayload(source: GitHubDataSource) {
 }
 
 async function readRuntimeSource(): Promise<RuntimeSource> {
-  const rawConfig = readRuntimeConfig();
-  const config = { ...rawConfig, githubToken: rawConfig.githubToken || await getRuntimeGitHubToken() };
+  const config = await readGitHubRuntimeConfig();
   if (config.mockGitHub) {
     return {
       config,

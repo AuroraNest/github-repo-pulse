@@ -172,6 +172,8 @@ export function SetupClient({ common, initialRepositories, initialSource, locale
           .replace("{count}", response.data.trackedRepositoriesCount.toLocaleString(intlLocale))
           .replace("{status}", response.data.firstSync.status)
       });
+      router.push("/overview");
+      router.refresh();
     } catch (error) {
       setCompleteFeedback({ tone: "red", message: errorMessage(error) });
     } finally {
