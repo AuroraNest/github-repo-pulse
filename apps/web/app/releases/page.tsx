@@ -13,6 +13,7 @@ export default async function ReleasesPage() {
   const { locale, t } = await getDictionary();
   const { source, assets, overview } = await getReleaseData();
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
+  const trendDescription = assets.length > 0 ? t.releases.downloadTrendEmptyDescription : sourceDescription;
   const mostDownloaded = [...assets].sort((a, b) => b.totalDownloads - a.totalDownloads)[0];
 
   return (
@@ -44,13 +45,13 @@ export default async function ReleasesPage() {
           <Card>
             <SectionTitle title={t.releases.cumulativeDownloads} />
             <div className="mt-4">
-              {overview.growthTrends.length > 0 ? <DownloadsAreaChart data={overview.growthTrends} label={t.common.downloads} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
+              {overview.growthTrends.length > 0 ? <DownloadsAreaChart data={overview.growthTrends} label={t.common.downloads} /> : <EmptyState title={t.common.noDataYet} description={trendDescription} />}
             </div>
           </Card>
           <Card>
             <SectionTitle title={t.releases.dailyDownloadsByRepo} />
             <div className="mt-4">
-              {overview.growthTrends.length > 0 ? <DownloadsAreaChart data={overview.growthTrends} label={t.common.downloads} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
+              {overview.growthTrends.length > 0 ? <DownloadsAreaChart data={overview.growthTrends} label={t.common.downloads} /> : <EmptyState title={t.common.noDataYet} description={trendDescription} />}
             </div>
           </Card>
         </div>

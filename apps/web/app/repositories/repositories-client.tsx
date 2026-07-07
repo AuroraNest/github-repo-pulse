@@ -210,27 +210,27 @@ export function RepositoriesClient({
                 <td className="px-3 py-4">{repo.latestRelease}</td>
                 <td className="px-3 py-4">{formatDate(repo.lastSyncAt, locale)}</td>
                 <td className="px-3 py-4"><Chip tone={repo.status === "warning" ? "yellow" : repo.status === "error" ? "red" : "green"}>{translateStatus(repo.status, locale)}</Chip></td>
-                <td className="px-3 py-4">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Link href={`/repositories/${repo.id}`} className={actionClass("primary")}>
+                <td className="px-3 py-4 align-middle">
+                  <div className="flex min-w-[208px] items-center justify-end gap-1.5">
+                    <Link aria-label={labels.view} href={`/repositories/${repo.id}`} title={labels.view} className={actionClass("primary")}>
                       <Eye size={14} />
-                      {labels.view}
+                      <span className="sr-only">{labels.view}</span>
                     </Link>
-                    <button className={actionClass()} disabled={busy !== null} onClick={() => syncRepository(repo)} type="button">
+                    <button aria-label={labels.syncNow} title={labels.syncNow} className={actionClass()} disabled={busy !== null} onClick={() => syncRepository(repo)} type="button">
                       <RefreshCw className={busy === `${repo.id}-sync` ? "animate-spin" : ""} size={14} />
-                      {busy === `${repo.id}-sync` ? labels.working : labels.syncNow}
+                      <span className="sr-only">{busy === `${repo.id}-sync` ? labels.working : labels.syncNow}</span>
                     </button>
-                    <button className={actionClass()} disabled={busy !== null} onClick={() => patchRepository(repo, { tracked: !repo.tracked }, "tracked")} type="button">
+                    <button aria-label={repo.tracked ? labels.pauseTracking : labels.resumeTracking} title={repo.tracked ? labels.pauseTracking : labels.resumeTracking} className={actionClass()} disabled={busy !== null} onClick={() => patchRepository(repo, { tracked: !repo.tracked }, "tracked")} type="button">
                       {repo.tracked ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
-                      {repo.tracked ? labels.pauseTracking : labels.resumeTracking}
+                      <span className="sr-only">{repo.tracked ? labels.pauseTracking : labels.resumeTracking}</span>
                     </button>
-                    <button className={actionClass()} disabled={busy !== null} onClick={() => patchRepository(repo, { favorite: !repo.favorite }, "favorite")} type="button">
+                    <button aria-label={repo.favorite ? labels.unfavorite : labels.favorite} title={repo.favorite ? labels.unfavorite : labels.favorite} className={actionClass()} disabled={busy !== null} onClick={() => patchRepository(repo, { favorite: !repo.favorite }, "favorite")} type="button">
                       <Star className={repo.favorite ? "fill-amber-400 text-amber-400" : ""} size={14} />
-                      {repo.favorite ? labels.unfavorite : labels.favorite}
+                      <span className="sr-only">{repo.favorite ? labels.unfavorite : labels.favorite}</span>
                     </button>
-                    <Link href="/reports" className={actionClass()}>
+                    <Link aria-label={labels.reports} href="/reports" title={labels.reports} className={actionClass()}>
                       <BarChart3 size={14} />
-                      {labels.reports}
+                      <span className="sr-only">{labels.reports}</span>
                     </Link>
                   </div>
                 </td>
@@ -261,9 +261,9 @@ function Metric({ icon: Icon, value, locale }: { icon: LucideIcon; value: number
 
 function actionClass(tone: "primary" | "default" = "default") {
   const toneClass = tone === "primary"
-    ? "text-blue-700 hover:border-blue-200 hover:bg-blue-50"
-    : "text-slate-600 hover:border-slate-200 hover:bg-slate-50";
-  return `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`;
+    ? "border-blue-100 bg-blue-50 text-blue-700 hover:border-blue-200 hover:bg-blue-100"
+    : "border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:bg-slate-50 hover:text-slate-900";
+  return `inline-flex size-8 items-center justify-center rounded-lg border text-xs font-medium shadow-sm shadow-slate-100 transition disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`;
 }
 
 function sortRepositories(a: RepositorySummary, b: RepositorySummary, sortBy: SortKey) {
