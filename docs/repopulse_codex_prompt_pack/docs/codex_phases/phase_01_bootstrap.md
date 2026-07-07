@@ -10,7 +10,7 @@
 2. Tailwind CSS + shadcn/ui 基础。
 3. AppShell、Sidebar、TopBar 布局。
 4. 路由：/setup、/overview、/repositories、/releases、/reports、/settings。
-5. Drizzle + SQLite 初始化。
+5. MySQL 初始化。
 6. 基础数据库 schema 和 migration。
 7. Demo seed 数据。
 8. Dockerfile、docker-compose.yml、.env.example。

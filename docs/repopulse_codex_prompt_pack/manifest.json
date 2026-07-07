@@ -8,7 +8,7 @@
     "Tailwind CSS",
     "shadcn/ui",
     "Drizzle ORM",
-    "SQLite",
+    "MySQL",
     "Octokit",
     "Recharts"
   ],

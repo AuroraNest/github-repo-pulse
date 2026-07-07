@@ -21,7 +21,7 @@
 ## Phase 2：数据库 schema
 
 ```text
-请根据 04_DATABASE_SCHEMA.md 实现数据库 schema。使用 Drizzle ORM + SQLite 默认。实现 database client、migration、基础 query helper。表包括 app_settings、github_connections、repositories、repository_snapshots、traffic_daily、traffic_summary_snapshots、popular_path_snapshots、referrer_snapshots、releases、release_assets、release_asset_snapshots、sync_runs、sync_run_items、activity_events、reports、alert_rules、alert_events、ai_settings、ai_runs。注意唯一索引和 snapshot upsert 需要支持。
+请根据 04_DATABASE_SCHEMA.md 实现数据库 schema。当前实现选择 MySQL-first。实现 database client、migration、基础 query helper。表包括 app_settings、github_connections、repositories、repository_snapshots、traffic_daily、traffic_summary_snapshots、popular_path_snapshots、referrer_snapshots、releases、release_assets、release_asset_snapshots、sync_runs、sync_run_items、activity_events、reports、alert_rules、alert_events、ai_settings、ai_runs。注意唯一索引和 snapshot upsert 需要支持。
 ```
 
 验收：migration 能创建所有表。
@@ -109,7 +109,7 @@
 ## Phase 13：Docker、README、开源发布
 
 ```text
-请根据 18_DEPLOYMENT_OPEN_SOURCE.md 完成 Dockerfile.web、Dockerfile.worker、docker-compose.yml、.env.example、README、LICENSE、GitHub issue templates、CI workflow。确保 docker compose up -d 后可以访问 Web，worker 能启动，SQLite 数据持久化。
+请根据 18_DEPLOYMENT_OPEN_SOURCE.md 完成 Dockerfile.web、Dockerfile.worker、docker-compose.yml、.env.example、README、LICENSE、GitHub issue templates、CI workflow。确保 docker compose up -d 后可以访问 Web，worker 能启动，MySQL 数据持久化。
 ```
 
 验收：新用户按照 README 可以部署成功。

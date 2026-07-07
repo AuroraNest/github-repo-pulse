@@ -1,6 +1,6 @@
 # 05. 数据库设计
 
-默认数据库：SQLite。设计时用 Drizzle ORM。所有时间字段统一 UTC ISO string 或 integer timestamp，建议统一用 `createdAt`, `updatedAt`, `snapshotDate`。
+默认数据库：MySQL。设计时保持数据库访问隔离。所有时间字段统一 UTC ISO string 或 integer timestamp，建议统一用 `createdAt`, `updatedAt`, `snapshotDate`。
 
 ## 设计原则
 

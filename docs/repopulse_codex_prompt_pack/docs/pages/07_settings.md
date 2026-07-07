@@ -70,13 +70,13 @@
 
 显示：
 
-- Provider：SQLite。
-- DB path。
+- Provider：MySQL。
+- DB connection。
 - DB size。
 - Last backup。
 - Health。
 
-后续支持：MySQL/PostgreSQL。
+后续支持：PostgreSQL/SQLite adapter。
 
 ## AI Settings
 

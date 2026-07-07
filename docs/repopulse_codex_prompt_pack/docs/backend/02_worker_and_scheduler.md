@@ -18,11 +18,14 @@ services:
     command: pnpm worker
 ```
 
-SQLite 数据库通过 volume 共享：
+MySQL 数据库通过 Docker service 共享：
 
 ```yaml
-volumes:
-  - ./data:/app/data
+services:
+  mysql:
+    image: mysql:8.4
+    volumes:
+      - mysql_data:/var/lib/mysql
 ```
 
 ## Worker 入口

@@ -25,6 +25,16 @@ http://localhost:3000
 
 ```yaml
 services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-repopulse_dev}
+      MYSQL_USER: ${MYSQL_USER:-repopulse_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-locally}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-root-locally}
+    volumes:
+      - mysql_data:/var/lib/mysql
+
   web:
     build:
       context: .
@@ -33,10 +43,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
-    volumes:
-      - repopulse_data:/data
     depends_on:
-      - worker
+      - mysql
 
   worker:
     build:
@@ -44,14 +52,14 @@ services:
       dockerfile: Dockerfile.worker
     env_file:
       - .env
-    volumes:
-      - repopulse_data:/data
+    depends_on:
+      - mysql
 
 volumes:
-  repopulse_data:
+  mysql_data:
 ```
 
-SQLite 数据库存储在 `/data/repopulse.db`。
+MySQL 数据库存储在 `mysql_data` Docker volume。
 
 ## Dockerfile 要求
 
@@ -162,7 +170,7 @@ Release：
 
 ### v0.1.0
 
-- SQLite
+- MySQL
 - GitHub Token
 - Daily sync
 - Overview

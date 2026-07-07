@@ -1,0 +1,61 @@
+x-repopulse-env: &repopulse-env
+  APP_URL: ${APP_URL:-http://localhost:3000}
+  SESSION_SECRET: ${SESSION_SECRET:-replace-with-a-local-random-string}
+  ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+  ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-locally}
+  GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+  GITHUB_API_BASE_URL: ${GITHUB_API_BASE_URL:-https://api.github.com}
+  MOCK_GITHUB: ${MOCK_GITHUB:-false}
+  SYNC_CONCURRENCY: ${SYNC_CONCURRENCY:-3}
+  AI_ENABLED: ${AI_ENABLED:-false}
+  AI_BASE_URL: ${AI_BASE_URL:-}
+  AI_API_KEY: ${AI_API_KEY:-}
+  AI_MODEL: ${AI_MODEL:-}
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-repopulse_dev}
+      MYSQL_USER: ${MYSQL_USER:-repopulse_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-locally}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-root-locally}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    environment:
+      <<: *repopulse-env
+      DATABASE_URL: mysql://${MYSQL_USER:-repopulse_user}:${MYSQL_PASSWORD:-change-me-locally}@mysql:3306/${MYSQL_DATABASE:-repopulse_dev}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    environment:
+      <<: *repopulse-env
+      DATABASE_URL: mysql://${MYSQL_USER:-repopulse_user}:${MYSQL_PASSWORD:-change-me-locally}@mysql:3306/${MYSQL_DATABASE:-repopulse_dev}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

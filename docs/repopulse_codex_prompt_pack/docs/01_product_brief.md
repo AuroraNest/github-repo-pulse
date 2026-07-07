@@ -21,12 +21,12 @@ GitHub 自带 Insights/Traffic 很有用，但存在几个问题：
 RepoPulse 的第一版必须做到：
 
 - 部署简单：`docker compose up -d` 后可用。
-- 默认轻量：SQLite 即可跑起来。
+- 默认轻量：Docker Compose 可启动 MySQL + web + worker。
 - 数据可控：所有数据保存在用户自己的服务器。
 - 定时采集：每天自动同步 GitHub 数据。
 - 可视化：有总览页、仓库页、下载页、报告页。
 - 可导出：支持 Markdown/CSV/JSON，PDF 可作为增强。
-- 可扩展：后续可支持 MySQL/PostgreSQL、GitHub App、AI 总结、通知渠道。
+- 可扩展：后续可支持 PostgreSQL/SQLite adapter、GitHub App、AI 总结、通知渠道。
 
 ## 目标用户
 

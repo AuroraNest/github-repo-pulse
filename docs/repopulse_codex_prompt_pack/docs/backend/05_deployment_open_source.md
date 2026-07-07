@@ -90,9 +90,9 @@ README 必须包含：
 ## Roadmap
 
 ```text
-v0.1 MVP: SQLite + PAT + dashboards + reports
+v0.1 MVP: MySQL + PAT + dashboards + reports
 v0.2 AI summaries + alerts + webhooks
-v0.3 GitHub App auth + MySQL/PostgreSQL
+v0.3 GitHub App auth + PostgreSQL/SQLite adapter
 v0.4 Team mode + hosted option optional
 ```
 

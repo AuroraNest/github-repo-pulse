@@ -34,8 +34,8 @@ SESSION_SECRET=replace_with_random_32_chars
 ENCRYPTION_KEY=replace_with_secure_random_key
 
 # Database
-DATABASE_PROVIDER=sqlite
-DATABASE_URL=file:/data/repopulse.db
+# MySQL-first implementation
+DATABASE_URL=mysql://repopulse_user:replace-with-local-password@mysql:3306/repopulse_dev
 
 # Worker
 SYNC_ENABLED=true
@@ -234,5 +234,5 @@ Setup 页要有提示：
 - `ALLOW_ANONYMOUS_TELEMETRY=false`
 - `EMAIL_ENABLED=false`
 - `WEBHOOK_ENABLED=false`
-- `DATABASE_PROVIDER=sqlite`
+- MySQL-first `DATABASE_URL` with placeholder-only credentials
 - 不含任何真实密钥

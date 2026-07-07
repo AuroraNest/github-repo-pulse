@@ -16,9 +16,9 @@
 
 ### 后端/数据
 
-- **Drizzle ORM**：轻量、类型安全、SQL 透明。
-- **SQLite 默认**：适合自托管个人项目，一键启动。
-- **better-sqlite3**：本地 SQLite 驱动。
+- **数据库访问隔离**：业务层不直接写 SQL。
+- **MySQL-first**：当前实现和本地 dev 环境使用 MySQL。
+- **mysql2**：当前 Node.js MySQL 驱动。
 - **Octokit**：GitHub REST API。
 - **node-cron**：worker 进程内定时任务。
 - **pino**：结构化日志。
@@ -35,20 +35,20 @@
 - Dockerfile。
 - docker-compose.yml。
 - web 服务 + worker 服务。
-- 默认挂载 `./data` 保存 SQLite 和导出文件。
+- 默认使用 Docker volume 保存 MySQL 数据。
 
-## 为什么默认 SQLite
+## 为什么默认 MySQL
 
-RepoPulse 第一批用户大概率是个人开发者。SQLite 最适合：
+当前实现先选择 MySQL, 因为：
 
-- 不需要单独数据库服务。
-- Docker Compose 简单。
-- 数据在一个文件里，备份容易。
-- 对每天同步一次的写入量完全足够。
+- 用户当前 dev 环境和部署目标已经按 MySQL 落地。
+- 适合长期历史快照和云服务器部署。
+- Docker Compose 可通过 `mysql` service 一键启动。
+- 备份和迁移路径更贴近生产部署。
 
-## MySQL/PostgreSQL 扩展策略
+## PostgreSQL/SQLite 扩展策略
 
-第一版实现 SQLite。代码上必须保持数据库访问隔离：
+第一版实现 MySQL。代码上必须保持数据库访问隔离：
 
 ```text
 src/server/db/schema.ts
@@ -59,11 +59,10 @@ src/server/repositories/*.repo.ts
 不要在页面/组件里直接写 SQL。所有数据读取通过 repository/service 层完成。这样后续可以加：
 
 ```env
-DB_PROVIDER=sqlite | mysql | postgres
-DATABASE_URL=...
+DATABASE_URL=mysql://...
 ```
 
-第二阶段再实现 MySQL/PostgreSQL adapter。
+第二阶段再实现 PostgreSQL/SQLite adapter。
 
 ## 推荐目录结构
 

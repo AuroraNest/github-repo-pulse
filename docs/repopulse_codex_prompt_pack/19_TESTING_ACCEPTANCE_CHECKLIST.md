@@ -115,7 +115,7 @@ docker compose up -d
 
 - web 可访问
 - worker 启动无报错
-- SQLite volume 创建
+- MySQL volume 创建
 - migrate 成功
 - health endpoint healthy
 

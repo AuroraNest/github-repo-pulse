@@ -53,17 +53,16 @@ Web 负责 UI、查询、配置、手动触发同步。Worker 负责定时任务
 
 ### 数据库
 
-MVP 默认 SQLite。
+当前实现选择 MySQL-first。
 
 原因：
 
-- 部署简单
-- 对个人用户足够
-- Docker volume 挂载即可
-- 低成本
-- 适合开源自托管
+- 用户当前 dev 环境已经选择 MySQL
+- Docker Compose 可以用 `mysql` service + volume 一键启动
+- 适合后续迁移到云服务器和长期数据持久化
+- 仍保留数据库访问隔离, 后续可补 PostgreSQL/SQLite adapter
 
-为了以后支持 MySQL/PostgreSQL，代码里不要把 SQL 写死在业务层。所有数据库访问放进 `packages/db`。
+代码里不要把 SQL 写死在业务层。所有数据库访问放进 `packages/db`。
 
 ### AI
 
@@ -196,7 +195,8 @@ docker compose up -d
 
 - `repopulse-web`: Web UI
 - `repopulse-worker`: 定时同步 worker
-- `repopulse-data`: SQLite volume，不一定单独服务
+- `repopulse-db`: MySQL service
+- `mysql_data`: MySQL volume
 
 ## 进程设计
 

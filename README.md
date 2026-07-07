@@ -6,6 +6,8 @@ RepoPulse is a self-hosted GitHub analytics dashboard for repository growth, rel
 - Production: `https://repopulse.auroramaple.com/overview`
 - Branch: `main` is the only maintained branch.
 
+![RepoPulse overview](docs/screenshots/overview.png)
+
 ## English
 
 ### What it includes
@@ -45,7 +47,22 @@ pnpm --filter @repopulse/web build
 
 Run `packages/db/src/migrations/0001_initial.sql` only against a local MySQL database after replacing placeholders with local-only credentials. Do not use real production database configuration in this repo.
 
-### Docker
+### Docker Compose
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The compose stack starts:
+
+- `web`: Next.js dashboard on `http://localhost:3000`
+- `worker`: RepoPulse worker process
+- `mysql`: local MySQL database with the `mysql_data` Docker volume
+
+Before real use, replace `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `SESSION_SECRET`, `ADMIN_PASSWORD`, and `GITHUB_TOKEN` in `.env`. Keep production secrets outside git.
+
+### Private registry publish
 
 ```bash
 export DOCKER_REGISTRY_USER=your-user
@@ -55,6 +72,10 @@ export DOCKER_REGISTRY_PASSWORD=your-password
 
 By default the image is pushed to `docker.auroramaple.com/aurora/github-repo-pulse/web`. Override `PROJECT_SLUG` only when publishing under a different registry path.
 
+### License
+
+MIT. See [LICENSE](LICENSE).
+
 ## 中文
 
 RepoPulse 是一个自托管 GitHub 数据分析看板, 用于查看仓库增长, release 下载, traffic, 同步历史和规则生成报告.
@@ -62,6 +83,8 @@ RepoPulse 是一个自托管 GitHub 数据分析看板, 用于查看仓库增长
 - 代码仓库: `https://github.com/AuroraNest/github-repo-pulse`
 - 线上地址: `https://repopulse.auroramaple.com/overview`
 - 分支约定: 只维护 `main`.
+
+![RepoPulse overview](docs/screenshots/overview.png)
 
 ### 包含内容
 
@@ -100,7 +123,22 @@ pnpm --filter @repopulse/web build
 
 只在替换为本地专用凭据后, 才对本地 MySQL 数据库运行 `packages/db/src/migrations/0001_initial.sql`.不要在这个 repo 中写入真实生产数据库配置.
 
-### Docker
+### Docker Compose
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Compose stack 会启动:
+
+- `web`: Next.js 看板, 访问 `http://localhost:3000`
+- `worker`: RepoPulse worker 进程
+- `mysql`: 本地 MySQL 数据库, 数据存放在 `mysql_data` Docker volume
+
+真实使用前, 请替换 `.env` 里的 `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `SESSION_SECRET`, `ADMIN_PASSWORD`, `GITHUB_TOKEN`.生产 secret 不要写进 git.
+
+### 私有镜像发布
 
 ```bash
 export DOCKER_REGISTRY_USER=your-user
@@ -109,3 +147,7 @@ export DOCKER_REGISTRY_PASSWORD=your-password
 ```
 
 默认镜像推送到 `docker.auroramaple.com/aurora/github-repo-pulse/web`.只有需要发布到不同 registry 路径时才覆盖 `PROJECT_SLUG`.
+
+### License
+
+MIT. 见 [LICENSE](LICENSE).

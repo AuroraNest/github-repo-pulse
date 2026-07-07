@@ -58,7 +58,7 @@ MVP 可以先把 integrations 合并到 Settings。
 
 显示：
 
-- provider: SQLite
+- provider: MySQL
 - database path
 - storage used
 - status

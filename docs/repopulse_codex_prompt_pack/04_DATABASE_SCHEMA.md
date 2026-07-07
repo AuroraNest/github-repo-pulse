@@ -2,7 +2,7 @@
 
 ## 数据库原则
 
-MVP 默认 SQLite。数据模型要支持长期历史快照、每日增量、报告、同步日志、AI 总结和告警。
+当前实现选择 MySQL-first。数据模型要支持长期历史快照、每日增量、报告、同步日志、AI 总结和告警。
 
 关键原则：
 
@@ -435,5 +435,5 @@ created_at               datetime
 
 - 所有表要有 created_at / updated_at
 - migrations 可重复执行
-- 不要破坏用户已有 SQLite 数据
+- 不要破坏用户已有 MySQL 数据
 - 给后续 MySQL/PostgreSQL 留字段类型余地

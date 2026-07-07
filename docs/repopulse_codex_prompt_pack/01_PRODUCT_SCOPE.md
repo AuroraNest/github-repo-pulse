@@ -68,7 +68,7 @@ MVP 必须包含：
 - 仓库选择
 - 每日定时同步
 - 手动同步
-- SQLite 数据库持久化
+- MySQL 数据库持久化
 - Overview 总览页
 - Repositories 仓库列表页
 - Repository Detail 单仓库详情页
@@ -91,7 +91,7 @@ MVP 必须包含：
 - AI 问答
 - Star History 分享图
 - Public read-only dashboard
-- 多数据库正式支持：MySQL / PostgreSQL
+- 多数据库正式支持：PostgreSQL / SQLite adapter
 - 插件系统
 
 ## 明确不做或暂缓
