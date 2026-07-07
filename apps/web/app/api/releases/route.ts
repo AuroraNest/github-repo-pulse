@@ -5,6 +5,11 @@ export async function GET() {
   const { source, assets, overview } = await getReleaseData();
   const mostDownloadedAsset = [...assets].sort((a, b) => b.totalDownloads - a.totalDownloads)[0];
 
+  const dailyDownloads = overview.growthTrends.map((point) => ({
+    date: point.date,
+    downloads: point.downloads
+  }));
+
   return jsonOk({
     github: githubDataSourcePayload(source),
     kpis: {
@@ -17,6 +22,7 @@ export async function GET() {
       } : null
     },
     cumulativeDownloads: overview.growthTrends,
+    dailyDownloads,
     dailyDownloadsByRepository: overview.growthTrends,
     assets,
     topAssets: assets,

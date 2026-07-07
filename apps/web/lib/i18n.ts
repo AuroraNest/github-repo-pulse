@@ -29,7 +29,8 @@ export function translateStatus(value: string, locale: Locale) {
       success: "Success",
       partial_failed: "Partial failed",
       Active: "Active",
-      "Baseline captured": "Baseline captured"
+      "Baseline captured": "Baseline captured",
+      Warning: "Warning"
     },
     zh: {
       healthy: "健康",
@@ -37,7 +38,8 @@ export function translateStatus(value: string, locale: Locale) {
       success: "成功",
       partial_failed: "部分失败",
       Active: "启用",
-      "Baseline captured": "基线已记录"
+      "Baseline captured": "基线已记录",
+      Warning: "告警"
     }
   };
 

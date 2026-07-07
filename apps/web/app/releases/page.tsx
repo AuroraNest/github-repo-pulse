@@ -1,10 +1,11 @@
 import { Download, PackageCheck, TrendingUp, type LucideIcon } from "lucide-react";
-import { DownloadsAreaChart, TrafficChart } from "../../components/charts";
+import { DownloadsAreaChart } from "../../components/charts";
 import { Card, Chip, EmptyState, SectionTitle } from "../../components/ui";
 import { getReleaseData, isGitHubConfigurationRequired } from "../../lib/data-source";
 import { formatCompactNumber } from "../../lib/format";
-import { translateStatus, type Locale } from "../../lib/i18n";
+import type { Locale } from "../../lib/i18n";
 import { getDictionary } from "../../lib/locale";
+import { ReleasesClient } from "./releases-client";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export default async function ReleasesPage() {
           <Card>
             <SectionTitle title={t.releases.dailyDownloadsByRepo} />
             <div className="mt-4">
-              {overview.growthTrends.length > 0 ? <TrafficChart data={overview.growthTrends} labels={{ views: t.common.views, clones: t.common.clones }} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
+              {overview.growthTrends.length > 0 ? <DownloadsAreaChart data={overview.growthTrends} label={t.common.downloads} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
             </div>
           </Card>
         </div>
@@ -74,39 +75,21 @@ export default async function ReleasesPage() {
       <Card>
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <SectionTitle title={t.releases.releaseAssets} subtitle={t.releases.releaseAssetsSubtitle} />
-          <div className="flex flex-wrap gap-2">
-            {t.releases.filters.map((filter) => <Chip key={filter}>{filter}</Chip>)}
-          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-left text-sm">
-            <thead>
-              <tr className="text-xs uppercase text-slate-500">
-                {t.releases.columns.map((column) => (
-                  <th key={column} className="border-b border-slate-200 px-3 py-3">{column}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {assets.map((asset) => (
-                <tr key={asset.id}>
-                  <td className="px-3 py-4 font-medium">{asset.repository}</td>
-                  <td className="px-3 py-4">{asset.tagName}</td>
-                  <td className="max-w-72 truncate px-3 py-4">{asset.assetName}</td>
-                  <td className="px-3 py-4">{asset.assetSize}</td>
-                  <td className="px-3 py-4">{asset.publishedAt}</td>
-                  <td className="px-3 py-4">{formatCompactNumber(asset.totalDownloads, locale)}</td>
-                  <td className="px-3 py-4 text-teal-600">+{formatCompactNumber(asset.todayDownloads, locale)}</td>
-                  <td className="px-3 py-4">+{formatCompactNumber(asset.sevenDayDownloads, locale)}</td>
-                  <td className="px-3 py-4">+{formatCompactNumber(asset.thirtyDayDownloads, locale)}</td>
-                  <td className="px-3 py-4"><Chip tone="green">{translateStatus(asset.status, locale)}</Chip></td>
-                  <td className="px-3 py-4"><a href={asset.browserDownloadUrl} className="rounded-lg border border-slate-200 px-3 py-2 font-medium">{t.common.github}</a></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {assets.length === 0 ? <div className="mt-4"><EmptyState title={t.common.noReleases} description={sourceDescription} /></div> : null}
-        </div>
+        <ReleasesClient
+          assets={assets}
+          labels={{
+            all: locale === "zh" ? "全部" : "All",
+            columns: t.releases.columns,
+            filters: t.releases.filters,
+            github: t.common.github,
+            noReleases: t.common.noReleases,
+            search: t.common.searchRepositories,
+            sortBy: locale === "zh" ? "排序" : "Sort by"
+          }}
+          locale={locale}
+          sourceDescription={sourceDescription}
+        />
       </Card>
         </>
       ) : null}
