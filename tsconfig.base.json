@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@repopulse/core": ["packages/core/src/index.ts"],
+      "@repopulse/core/*": ["packages/core/src/*"],
+      "@repopulse/db": ["packages/db/src/index.ts"],
+      "@repopulse/db/*": ["packages/db/src/*"]
+    }
+  }
+}

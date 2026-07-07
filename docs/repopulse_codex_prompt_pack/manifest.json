@@ -1,0 +1,30 @@
+{
+  "project": "RepoPulse",
+  "created_for": "Codex implementation prompts",
+  "language": "zh-CN",
+  "default_stack": [
+    "Next.js",
+    "TypeScript",
+    "Tailwind CSS",
+    "shadcn/ui",
+    "Drizzle ORM",
+    "SQLite",
+    "Octokit",
+    "Recharts"
+  ],
+  "mvp_pages": [
+    "Setup",
+    "Overview",
+    "Repositories",
+    "Repository Detail",
+    "Releases/Downloads",
+    "Reports",
+    "Settings"
+  ],
+  "phase2_pages": [
+    "Activity/Sync Logs",
+    "Alerts/Automation",
+    "Integrations"
+  ],
+  "ai": "optional, disabled by default, OpenAI/OpenAI-compatible/Ollama ready"
+}

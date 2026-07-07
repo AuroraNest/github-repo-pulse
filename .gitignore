@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.next
+dist
+node_modules
+.pnpm-store
+task-memory
+coverage
+*.log
+*.tsbuildinfo
+.DS_Store
