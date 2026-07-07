@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
     token: body.data.token,
     baseUrl: config.githubApiBaseUrl,
     mock: config.mockGitHub
-  });
+  }).catch(() => null);
+
+  if (!result) {
+    return jsonError("GITHUB_TOKEN_INVALID", "GitHub token verification failed.", 401);
+  }
 
   return jsonOk(result);
 }

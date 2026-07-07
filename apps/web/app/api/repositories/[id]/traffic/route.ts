@@ -1,6 +1,6 @@
-import { findRepository, mockOverview, mockRepositories } from "@repopulse/core";
 import { NextRequest } from "next/server";
 import { jsonError, jsonOk } from "../../../../../lib/api";
+import { getReleaseData, getRepositoryData, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
 
 type RouteContext = {
   params: Promise<{ id: string }> | { id: string };
@@ -8,21 +8,27 @@ type RouteContext = {
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
-  const repository = findRepository(mockRepositories, id);
+  const { source, repository } = await getRepositoryData(id);
+  if (isGitHubConfigurationRequired(source)) {
+    return jsonError("GITHUB_CONFIGURATION_REQUIRED", source.message, 409);
+  }
+
   if (!repository) {
     return jsonError("NOT_FOUND", "Repository not found.", 404);
   }
 
+  const { overview } = getReleaseData();
+
   return jsonOk({
-    daily: mockOverview.viewsVsClones.map((point) => ({
+    daily: overview.viewsVsClones.map((point) => ({
       date: point.date,
       views: point.views,
       uniqueVisitors: Math.round(point.views * 0.72),
       clones: point.clones,
       uniqueCloners: Math.round(point.clones * 0.66)
     })),
-    popularPaths: ["/", "/releases", `/releases/tag/${repository.latestRelease}`],
-    referrers: ["github.com", "google.com", "direct/bookmark"],
+    popularPaths: source.demo ? ["/", "/releases", `/releases/tag/${repository.latestRelease}`] : [],
+    referrers: source.demo ? ["github.com", "google.com", "direct/bookmark"] : [],
     conversion: {
       visitors: repository.visitors14d,
       releasePageViews: Math.round(repository.visitors14d * 0.28),

@@ -1,21 +1,25 @@
 import { Download, Eye, GitFork, Star, Users, Workflow } from "lucide-react";
 import Link from "next/link";
-import { mockOverview } from "@repopulse/core";
 import { GrowthChart, TrafficChart } from "../../components/charts";
-import { Card, Chip, SectionTitle } from "../../components/ui";
+import { Card, Chip, EmptyState, SectionTitle } from "../../components/ui";
+import { getOverviewData, isGitHubConfigurationRequired } from "../../lib/data-source";
 import { formatCompactNumber } from "../../lib/format";
 import { translateStatus } from "../../lib/i18n";
 import { getDictionary } from "../../lib/locale";
 
+export const dynamic = "force-dynamic";
+
 export default async function OverviewPage() {
   const { locale, t } = await getDictionary();
+  const { source, overview } = await getOverviewData();
+  const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
   const kpis = [
-    { label: t.overview.kpis.totalStars, value: mockOverview.kpis.totalStars, change: "+3.8%", icon: Star, tone: "text-amber-500 bg-amber-50" },
-    { label: t.overview.kpis.totalForks, value: mockOverview.kpis.totalForks, change: "+2.1%", icon: GitFork, tone: "text-violet-500 bg-violet-50" },
-    { label: t.overview.kpis.totalDownloads, value: mockOverview.kpis.totalDownloads, change: "+8.4%", icon: Download, tone: "text-teal-500 bg-teal-50" },
-    { label: t.overview.kpis.downloadsToday, value: mockOverview.kpis.downloadsToday, change: "+225", icon: Workflow, tone: "text-blue-500 bg-blue-50" },
-    { label: t.overview.kpis.visitors14d, value: mockOverview.kpis.visitors14d, change: "+9.1%", icon: Users, tone: "text-pink-500 bg-pink-50" },
-    { label: t.overview.kpis.clones14d, value: mockOverview.kpis.clones14d, change: "+4.7%", icon: Eye, tone: "text-slate-500 bg-slate-100" }
+    { label: t.overview.kpis.totalStars, value: overview.kpis.totalStars, change: source.demo ? "+3.8%" : "+0", icon: Star, tone: "text-amber-500 bg-amber-50" },
+    { label: t.overview.kpis.totalForks, value: overview.kpis.totalForks, change: source.demo ? "+2.1%" : "+0", icon: GitFork, tone: "text-violet-500 bg-violet-50" },
+    { label: t.overview.kpis.totalDownloads, value: overview.kpis.totalDownloads, change: source.demo ? "+8.4%" : "+0", icon: Download, tone: "text-teal-500 bg-teal-50" },
+    { label: t.overview.kpis.downloadsToday, value: overview.kpis.downloadsToday, change: source.demo ? "+225" : "+0", icon: Workflow, tone: "text-blue-500 bg-blue-50" },
+    { label: t.overview.kpis.visitors14d, value: overview.kpis.visitors14d, change: source.demo ? "+9.1%" : "+0", icon: Users, tone: "text-pink-500 bg-pink-50" },
+    { label: t.overview.kpis.clones14d, value: overview.kpis.clones14d, change: source.demo ? "+4.7%" : "+0", icon: Eye, tone: "text-slate-500 bg-slate-100" }
   ];
 
   return (
@@ -26,11 +30,21 @@ export default async function OverviewPage() {
           <p className="mt-2 text-slate-500">{t.overview.description}</p>
         </div>
         <div className="flex gap-2">
-          <Chip tone="green">{t.common.healthy}</Chip>
-          <Chip tone="yellow">{t.overview.partialSync}</Chip>
+          <Chip tone={source.demo ? "yellow" : source.configured ? "green" : "red"}>{source.demo ? t.common.demoMode : source.configured ? t.common.healthy : t.common.configureGitHub}</Chip>
+          {source.demo ? <Chip tone="yellow">{t.common.demoDataActive}</Chip> : null}
         </div>
       </div>
 
+      {isGitHubConfigurationRequired(source) ? (
+        <EmptyState
+          title={t.common.githubConfigurationRequired}
+          description={t.common.githubConfigurationRequiredDescription}
+          action={<Link href="/setup" className="inline-flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white">{t.common.configureGitHub}</Link>}
+        />
+      ) : null}
+
+      {!isGitHubConfigurationRequired(source) ? (
+        <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {kpis.map((kpi) => (
           <Card key={kpi.label}>
@@ -57,14 +71,22 @@ export default async function OverviewPage() {
             <SectionTitle title={t.overview.growthTitle} subtitle={t.overview.growthSubtitle} />
             <Chip>{t.overview.last30Days}</Chip>
           </div>
-          <GrowthChart data={mockOverview.growthTrends} labels={{ stars: t.common.stars, forks: t.common.forks, downloads: t.common.downloads }} />
+          {overview.growthTrends.length > 0 ? (
+            <GrowthChart data={overview.growthTrends} labels={{ stars: t.common.stars, forks: t.common.forks, downloads: t.common.downloads }} />
+          ) : (
+            <EmptyState title={t.common.noDataYet} description={sourceDescription} />
+          )}
         </Card>
         <Card>
           <div className="mb-4 flex items-center justify-between">
             <SectionTitle title={t.overview.viewsVsClones} subtitle={t.overview.viewsVsClonesSubtitle} />
             <Chip>{t.overview.aggregated}</Chip>
           </div>
-          <TrafficChart data={mockOverview.viewsVsClones} labels={{ views: t.common.views, clones: t.common.clones }} />
+          {overview.viewsVsClones.length > 0 ? (
+            <TrafficChart data={overview.viewsVsClones} labels={{ views: t.common.views, clones: t.common.clones }} />
+          ) : (
+            <EmptyState title={t.common.noDataYet} description={sourceDescription} />
+          )}
         </Card>
       </div>
 
@@ -72,7 +94,7 @@ export default async function OverviewPage() {
         <Card>
           <SectionTitle title={t.overview.fastestGrowing} />
           <div className="mt-4 space-y-3">
-            {mockOverview.fastestGrowingRepositories.map((repo, index) => (
+            {overview.fastestGrowingRepositories.length > 0 ? overview.fastestGrowingRepositories.map((repo, index) => (
               <Link key={repo.repositoryId} href={`/repositories/${repo.repositoryId}`} className="flex items-center justify-between rounded-lg border border-slate-100 p-3 hover:bg-slate-50">
                 <div className="flex items-center gap-3">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700">{index + 1}</span>
@@ -80,27 +102,27 @@ export default async function OverviewPage() {
                 </div>
                 <span className="text-sm font-semibold text-emerald-600">+{repo.growthPercent}%</span>
               </Link>
-            ))}
+            )) : <EmptyState title={t.common.noRepositories} description={sourceDescription} />}
           </div>
         </Card>
 
         <Card>
           <SectionTitle title={t.overview.topReleases} />
           <div className="mt-4 space-y-3">
-            {mockOverview.topReleases.map((asset) => (
+            {overview.topReleases.length > 0 ? overview.topReleases.map((asset) => (
               <div key={asset.id} className="rounded-lg border border-slate-100 p-3">
                 <div className="font-medium">{asset.repository}</div>
                 <div className="mt-1 truncate text-sm text-slate-500">{asset.assetName}</div>
                 <div className="mt-2 text-sm font-semibold text-teal-600">{formatCompactNumber(asset.totalDownloads, locale)} {t.common.downloads}</div>
               </div>
-            ))}
+            )) : <EmptyState title={t.common.noReleases} description={sourceDescription} />}
           </div>
         </Card>
 
         <Card>
           <SectionTitle title={t.overview.activityFeed} />
           <div className="mt-4 space-y-3">
-            {mockOverview.activityFeed.map((event) => (
+            {overview.activityFeed.length > 0 ? overview.activityFeed.map((event) => (
               <div key={event.id} className="rounded-lg border border-slate-100 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium">{event.title}</p>
@@ -108,10 +130,12 @@ export default async function OverviewPage() {
                 </div>
                 <p className="mt-1 text-xs text-slate-500">{event.repository}</p>
               </div>
-            ))}
+            )) : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
           </div>
         </Card>
       </div>
+        </>
+      ) : null}
     </div>
   );
 }

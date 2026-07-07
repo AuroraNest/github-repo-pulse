@@ -25,9 +25,22 @@ export type RepositorySyncResult = {
   errorMessage?: string;
 };
 
+export class GitHubConfigurationRequiredError extends Error {
+  code = "GITHUB_CONFIGURATION_REQUIRED" as const;
+
+  constructor() {
+    super("GitHub token is required unless MOCK_GITHUB=true is explicitly enabled.");
+    this.name = "GitHubConfigurationRequiredError";
+  }
+}
+
 export function createGitHubClient(options: GitHubClientOptions) {
-  if (options.mock || !options.token) {
+  if (options.mock) {
     return null;
+  }
+
+  if (!options.token) {
+    throw new GitHubConfigurationRequiredError();
   }
 
   return new Octokit({
@@ -38,14 +51,17 @@ export function createGitHubClient(options: GitHubClientOptions) {
 }
 
 export async function verifyGitHubToken(options: GitHubClientOptions): Promise<TokenVerificationResult> {
-  const client = createGitHubClient(options);
-
-  if (!client) {
+  if (options.mock) {
     return {
       account: { login: "MockGitHubUser", id: 75767774, avatarUrl: "https://github.com/github.png" },
       tokenMask: maskToken(options.token || "github_pat_mocktoken"),
       permissions: defaultPermissions("Mock mode; traffic permissions are confirmed during sync.")
     };
+  }
+
+  const client = createGitHubClient(options);
+  if (!client) {
+    throw new GitHubConfigurationRequiredError();
   }
 
   const user = await client.rest.users.getAuthenticated();
@@ -62,10 +78,13 @@ export async function verifyGitHubToken(options: GitHubClientOptions): Promise<T
 }
 
 export async function listAccessibleRepositories(options: GitHubClientOptions): Promise<RepositorySummary[]> {
-  const client = createGitHubClient(options);
-
-  if (!client) {
+  if (options.mock) {
     return mockRepositories;
+  }
+
+  const client = createGitHubClient(options);
+  if (!client) {
+    throw new GitHubConfigurationRequiredError();
   }
 
   const repos = await client.paginate(client.rest.repos.listForAuthenticatedUser, {

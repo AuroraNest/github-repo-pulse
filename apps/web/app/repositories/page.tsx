@@ -1,14 +1,18 @@
 import { Eye, GitFork, Github, Star, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { mockRepositories } from "@repopulse/core";
-import { Card, Chip, SectionTitle } from "../../components/ui";
+import { Card, Chip, EmptyState, SectionTitle } from "../../components/ui";
+import { getRepositoryCollection, isGitHubConfigurationRequired } from "../../lib/data-source";
 import { formatCompactNumber, formatDate } from "../../lib/format";
 import { translateStatus, translateVisibility, type Locale } from "../../lib/i18n";
 import { getDictionary } from "../../lib/locale";
 
+export const dynamic = "force-dynamic";
+
 export default async function RepositoriesPage() {
   const { locale, t } = await getDictionary();
-  const fastest = [...mockRepositories].sort((a, b) => b.todayDownloads - a.todayDownloads)[0];
+  const { source, repositories } = await getRepositoryCollection();
+  const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
+  const fastest = [...repositories].sort((a, b) => b.todayDownloads - a.todayDownloads || b.stars - a.stars)[0];
 
   return (
     <div className="space-y-6">
@@ -20,20 +24,28 @@ export default async function RepositoriesPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <SectionTitle title={t.repositories.totalTracked} />
-          <p className="mt-4 text-3xl font-semibold">{mockRepositories.filter((repo) => repo.tracked).length}</p>
+          <p className="mt-4 text-3xl font-semibold">{repositories.filter((repo) => repo.tracked).length}</p>
         </Card>
         <Card>
           <SectionTitle title={t.repositories.activeAlerts} />
-          <p className="mt-4 text-3xl font-semibold">1</p>
+          <p className="mt-4 text-3xl font-semibold">{source.demo ? "1" : "0"}</p>
         </Card>
         <Card>
           <SectionTitle title={t.repositories.fastestGrowing} />
-          <p className="mt-4 text-2xl font-semibold">{fastest.name}</p>
-          <p className="text-sm text-emerald-600">+{formatCompactNumber(fastest.todayDownloads, locale)} {t.common.downloadsToday}</p>
+          <p className="mt-4 text-2xl font-semibold">{fastest?.name || t.common.noDataYet}</p>
+          <p className="text-sm text-emerald-600">+{formatCompactNumber(fastest?.todayDownloads || 0, locale)} {t.common.downloadsToday}</p>
         </Card>
       </div>
 
       <Card>
+        {isGitHubConfigurationRequired(source) ? (
+          <EmptyState
+            title={t.common.githubConfigurationRequired}
+            description={t.common.githubConfigurationRequiredDescription}
+            action={<Link href="/setup" className="inline-flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white">{t.common.configureGitHub}</Link>}
+          />
+        ) : null}
+
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
             {t.repositories.tabs.map((tab) => (
@@ -57,7 +69,7 @@ export default async function RepositoriesPage() {
               </tr>
             </thead>
             <tbody>
-              {mockRepositories.map((repo) => (
+              {repositories.map((repo) => (
                 <tr key={repo.id} className="border-b border-slate-100">
                   <td className="px-3 py-4">
                     <Link href={`/repositories/${repo.id}`} className="flex items-center gap-3">
@@ -88,6 +100,7 @@ export default async function RepositoriesPage() {
               ))}
             </tbody>
           </table>
+          {repositories.length === 0 ? <div className="mt-4"><EmptyState title={t.common.noRepositories} description={sourceDescription} /></div> : null}
         </div>
       </Card>
     </div>

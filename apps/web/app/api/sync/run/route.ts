@@ -1,7 +1,8 @@
-import { mockRepositories, readRuntimeConfig, syncRepositorySkeleton } from "@repopulse/core";
+import { readRuntimeConfig, syncRepositorySkeleton } from "@repopulse/core";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
+import { getRepositoryCollection, isGitHubConfigurationRequired } from "../../../../lib/data-source";
 import { requireSession } from "../../../../lib/session";
 
 const syncSchema = z.object({
@@ -19,9 +20,14 @@ export async function POST(request: NextRequest) {
   }
 
   const config = readRuntimeConfig();
+  const { source, repositories: allRepositories } = await getRepositoryCollection();
+  if (isGitHubConfigurationRequired(source)) {
+    return jsonError("GITHUB_CONFIGURATION_REQUIRED", source.message, 409);
+  }
+
   const repositories = body.data.scope === "repository"
-    ? mockRepositories.filter((repo) => repo.id === body.data.repositoryId)
-    : mockRepositories.filter((repo) => repo.tracked);
+    ? allRepositories.filter((repo) => repo.id === body.data.repositoryId)
+    : allRepositories.filter((repo) => repo.tracked);
 
   const items = [];
   for (const repository of repositories) {

@@ -1,6 +1,7 @@
-import { mockOverview } from "@repopulse/core";
 import { jsonOk } from "../../../lib/api";
+import { getOverviewData, githubDataSourcePayload } from "../../../lib/data-source";
 
 export async function GET() {
-  return jsonOk(mockOverview);
+  const { source, overview } = await getOverviewData();
+  return jsonOk({ ...overview, github: githubDataSourcePayload(source) });
 }

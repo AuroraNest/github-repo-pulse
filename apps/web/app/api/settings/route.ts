@@ -2,6 +2,7 @@ import { readRuntimeConfig } from "@repopulse/core";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../lib/api";
+import { getGitHubDataSource, githubDataSourcePayload } from "../../../lib/data-source";
 import { requireSession } from "../../../lib/session";
 
 const settingsSchema = z.object({
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
   if (!session.ok) return session.response;
 
   const config = readRuntimeConfig();
+  const githubSource = getGitHubDataSource();
   return jsonOk({
     sync: {
       enabled: true,
@@ -25,10 +27,11 @@ export async function GET(request: NextRequest) {
     },
     retention: { dataRetentionDays: 365 },
     github: {
-      connected: true,
-      accountLogin: "MockGitHubUser",
-      tokenMask: "github_pat_****mock",
-      rateLimit: { remaining: 4990, limit: 5000 }
+      ...githubDataSourcePayload(githubSource),
+      connected: githubSource.configured,
+      accountLogin: null,
+      tokenMask: githubSource.mode === "live" ? "configured" : null,
+      rateLimit: null
     },
     ai: {
       enabled: config.aiEnabled,
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
       status: config.databaseUrl ? "configured" : "placeholder"
     },
     worker: {
-      heartbeat: "mock-ready",
+      heartbeat: githubSource.mode === "configuration_required" ? "configuration-required" : "ready",
       version: "1.0.0"
     }
   });

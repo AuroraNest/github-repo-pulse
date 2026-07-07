@@ -1,10 +1,13 @@
-import { mockRepositories } from "@repopulse/core";
 import { jsonOk } from "../../../../lib/api";
+import { getRepositoryCollection, githubDataSourcePayload } from "../../../../lib/data-source";
 
 export async function GET() {
+  const { source, repositories } = await getRepositoryCollection();
+
   return jsonOk({
-    setupCompleted: true,
-    hasGitHubConnection: true,
-    trackedRepositoriesCount: mockRepositories.filter((repo) => repo.tracked).length
+    github: githubDataSourcePayload(source),
+    setupCompleted: source.configured,
+    hasGitHubConnection: source.configured,
+    trackedRepositoriesCount: repositories.filter((repo) => repo.tracked).length
   });
 }

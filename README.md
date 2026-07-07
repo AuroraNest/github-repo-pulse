@@ -6,7 +6,7 @@ RepoPulse is a self-hosted GitHub analytics dashboard for repository growth, rel
 
 ### What it includes
 
-- `apps/web`: Next.js TypeScript app with Tailwind UI, API routes, runtime locale switching, and mock-data fallback.
+- `apps/web`: Next.js TypeScript app with Tailwind UI, API routes, runtime locale switching, and explicit demo-data mode.
 - `apps/worker`: Node.js worker skeleton for scheduled and manual sync jobs.
 - `packages/core`: shared contracts, mock data, GitHub collector skeleton, metrics, and report helpers.
 - `packages/db`: MySQL-first schema, migration, and client helpers.
@@ -19,7 +19,9 @@ cp .env.example .env.local
 pnpm dev:web
 ```
 
-`GITHUB_TOKEN` and `DATABASE_URL` may stay empty or placeholder-only for UI smoke testing. When live GitHub or database configuration is absent, RepoPulse falls back to mock data.
+`GITHUB_TOKEN` may stay empty for local UI smoke testing. By default, missing GitHub configuration shows a clear configuration-required empty state instead of demo repositories, KPIs, releases, or reports.
+
+Set `MOCK_GITHUB=true` only when you explicitly want demo data. Demo mode is labeled in the UI and API payloads report `github.mode: "demo"`.
 
 ### Runtime language switching
 
@@ -45,7 +47,7 @@ RepoPulse 是一个自托管 GitHub 数据分析看板, 用于查看仓库增长
 
 ### 包含内容
 
-- `apps/web`: Next.js TypeScript 应用, 包含 Tailwind UI, API routes, 运行时语言切换和 mock data 兜底.
+- `apps/web`: Next.js TypeScript 应用, 包含 Tailwind UI, API routes, 运行时语言切换和显式 demo data 模式.
 - `apps/worker`: 用于定时和手动同步任务的 Node.js worker 骨架.
 - `packages/core`: 共享 contracts, mock data, GitHub collector 骨架, metrics 和 report helpers.
 - `packages/db`: MySQL 优先的 schema, migration 和 client helpers.
@@ -58,7 +60,9 @@ cp .env.example .env.local
 pnpm dev:web
 ```
 
-`GITHUB_TOKEN` 和 `DATABASE_URL` 可以在 UI smoke 测试时保持为空或占位值.缺少 live GitHub 或数据库配置时, RepoPulse 会回退到 mock data.
+`GITHUB_TOKEN` 可以在本地 UI smoke 测试时保持为空.默认缺少 GitHub 配置时, RepoPulse 会显示明确的配置必需空态, 不显示 demo 仓库, KPI, release 或 report.
+
+只有明确需要 demo 数据时才设置 `MOCK_GITHUB=true`.Demo mode 会在 UI 中标注, API payload 会返回 `github.mode: "demo"`.
 
 ### 运行时语言切换
 

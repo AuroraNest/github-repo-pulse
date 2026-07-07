@@ -1,10 +1,12 @@
 import { Bot, Database, Github, ShieldAlert, Timer, Webhook, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, Chip, SectionTitle } from "../../components/ui";
+import { getGitHubDataSource } from "../../lib/data-source";
 import { getDictionary } from "../../lib/locale";
 
 export default async function SettingsPage() {
   const { t } = await getDictionary();
+  const githubSource = getGitHubDataSource();
 
   return (
     <div className="space-y-6">
@@ -16,9 +18,10 @@ export default async function SettingsPage() {
       <div className="grid gap-4 xl:grid-cols-2">
         <SettingsCard icon={Github} title={t.settings.githubTitle} subtitle={t.settings.githubSubtitle}>
           <div className="flex flex-wrap gap-2">
-            <Chip tone="green">{t.settings.connected}</Chip>
-            <Chip>github_pat_****mock</Chip>
-            <Chip>{t.settings.rateLimitHealthy}</Chip>
+            <Chip tone={githubSource.configured ? "green" : "red"}>{githubSource.configured ? t.settings.connected : t.common.configureGitHub}</Chip>
+            {githubSource.demo ? <Chip tone="yellow">{t.common.demoMode}</Chip> : null}
+            {githubSource.mode === "live" ? <Chip>{t.common.liveGitHub}</Chip> : null}
+            {!githubSource.configured ? <Chip tone="red">{t.common.githubConfigurationRequired}</Chip> : null}
           </div>
           <div className="mt-4 flex gap-2">
             <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium">{t.settings.reverifyToken}</button>
@@ -37,7 +40,7 @@ export default async function SettingsPage() {
         <SettingsCard icon={Database} title={t.settings.dbTitle} subtitle={t.settings.dbSubtitle}>
           <div className="flex flex-wrap gap-2">
             <Chip tone="blue">{t.settings.providerMysql}</Chip>
-            <Chip tone="green">{t.settings.mockFallbackActive}</Chip>
+            {githubSource.demo ? <Chip tone="yellow">{t.settings.mockFallbackActive}</Chip> : null}
             <Chip>{t.settings.migration}</Chip>
           </div>
         </SettingsCard>

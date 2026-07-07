@@ -1,11 +1,13 @@
 import { Download, ExternalLink, GitFork, Star, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { findRepository, mockOverview, mockReleaseAssets, mockRepositories } from "@repopulse/core";
 import { GrowthChart, TrafficChart } from "../../../components/charts";
-import { Card, Chip, SectionTitle } from "../../../components/ui";
+import { Card, Chip, EmptyState, SectionTitle } from "../../../components/ui";
+import { getReleaseData, getRepositoryData, isGitHubConfigurationRequired } from "../../../lib/data-source";
 import { formatCompactNumber } from "../../../lib/format";
 import { translateVisibility, type Locale } from "../../../lib/i18n";
 import { getDictionary } from "../../../lib/locale";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ id: string }> | { id: string };
@@ -14,8 +16,26 @@ type PageProps = {
 export default async function RepositoryDetailPage({ params }: PageProps) {
   const { locale, t } = await getDictionary();
   const { id } = await params;
-  const repo = findRepository(mockRepositories, id) || mockRepositories[0];
-  const assets = mockReleaseAssets.filter((asset) => asset.repositoryId === repo.id);
+  const { source, repository: repo } = await getRepositoryData(id);
+  const releaseData = getReleaseData();
+  const assets = repo ? releaseData.assets.filter((asset) => asset.repositoryId === repo.id) : [];
+  const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
+
+  if (!repo) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="text-sm text-slate-500">{t.nav.repositories}</div>
+          <h1 className="mt-3 text-3xl font-semibold">{isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequired : t.common.noRepositories}</h1>
+        </div>
+        <EmptyState
+          title={isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequired : t.common.noRepositories}
+          description={sourceDescription}
+          action={<Link href="/setup" className="inline-flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white">{t.common.configureGitHub}</Link>}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -58,13 +78,13 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
         <Card>
           <SectionTitle title={t.repositoryDetail.growthTitle} subtitle={t.repositoryDetail.growthSubtitle} />
           <div className="mt-4">
-            <GrowthChart data={mockOverview.growthTrends} labels={{ stars: t.common.stars, forks: t.common.forks, downloads: t.common.downloads }} />
+            {releaseData.overview.growthTrends.length > 0 ? <GrowthChart data={releaseData.overview.growthTrends} labels={{ stars: t.common.stars, forks: t.common.forks, downloads: t.common.downloads }} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
           </div>
         </Card>
         <Card>
           <SectionTitle title={t.overview.viewsVsClones} subtitle={t.repositoryDetail.trafficSubtitle} />
           <div className="mt-4">
-            <TrafficChart data={mockOverview.viewsVsClones} labels={{ views: t.common.views, clones: t.common.clones }} />
+            {releaseData.overview.viewsVsClones.length > 0 ? <TrafficChart data={releaseData.overview.viewsVsClones} labels={{ views: t.common.views, clones: t.common.clones }} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
           </div>
         </Card>
       </div>
@@ -92,13 +112,13 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
         <Card>
           <SectionTitle title={t.repositoryDetail.releases} />
           <div className="mt-4 space-y-3">
-            {(assets.length > 0 ? assets : mockReleaseAssets.slice(0, 1)).map((asset) => (
+            {assets.length > 0 ? assets.map((asset) => (
               <div key={asset.id} className="rounded-lg border border-slate-100 p-3">
                 <div className="font-medium">{asset.tagName}</div>
                 <div className="truncate text-sm text-slate-500">{asset.assetName}</div>
                 <div className="mt-2 text-sm font-semibold">{formatCompactNumber(asset.totalDownloads, locale)} {t.common.downloads}</div>
               </div>
-            ))}
+            )) : <EmptyState title={t.common.noReleases} description={sourceDescription} />}
           </div>
         </Card>
       </div>

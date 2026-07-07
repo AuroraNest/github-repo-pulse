@@ -1,14 +1,18 @@
 import { Download, PackageCheck, TrendingUp, type LucideIcon } from "lucide-react";
-import { mockOverview, mockReleaseAssets } from "@repopulse/core";
 import { DownloadsAreaChart, TrafficChart } from "../../components/charts";
-import { Card, Chip, SectionTitle } from "../../components/ui";
+import { Card, Chip, EmptyState, SectionTitle } from "../../components/ui";
+import { getReleaseData, isGitHubConfigurationRequired } from "../../lib/data-source";
 import { formatCompactNumber } from "../../lib/format";
 import { translateStatus, type Locale } from "../../lib/i18n";
 import { getDictionary } from "../../lib/locale";
 
+export const dynamic = "force-dynamic";
+
 export default async function ReleasesPage() {
   const { locale, t } = await getDictionary();
-  const mostDownloaded = [...mockReleaseAssets].sort((a, b) => b.totalDownloads - a.totalDownloads)[0];
+  const { source, assets, overview } = getReleaseData();
+  const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
+  const mostDownloaded = [...assets].sort((a, b) => b.totalDownloads - a.totalDownloads)[0];
 
   return (
     <div className="space-y-6">
@@ -17,14 +21,20 @@ export default async function ReleasesPage() {
         <p className="mt-2 text-slate-500">{t.releases.description}</p>
       </div>
 
+      {isGitHubConfigurationRequired(source) ? (
+        <EmptyState title={t.common.githubConfigurationRequired} description={t.common.githubConfigurationRequiredDescription} />
+      ) : null}
+
+      {!isGitHubConfigurationRequired(source) ? (
+        <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <ReleaseKpi label={t.releases.totalDownloads} value={mockOverview.kpis.totalDownloads} icon={Download} locale={locale} />
-        <ReleaseKpi label={t.releases.downloadsToday} value={mockOverview.kpis.downloadsToday} icon={TrendingUp} locale={locale} />
-        <ReleaseKpi label={t.releases.activeReleases} value={mockReleaseAssets.length} icon={PackageCheck} locale={locale} />
+        <ReleaseKpi label={t.releases.totalDownloads} value={overview.kpis.totalDownloads} icon={Download} locale={locale} />
+        <ReleaseKpi label={t.releases.downloadsToday} value={overview.kpis.downloadsToday} icon={TrendingUp} locale={locale} />
+        <ReleaseKpi label={t.releases.activeReleases} value={assets.length} icon={PackageCheck} locale={locale} />
         <Card>
           <p className="text-sm text-slate-500">{t.releases.mostDownloadedAsset}</p>
-          <p className="mt-3 line-clamp-2 text-lg font-semibold">{mostDownloaded.assetName}</p>
-          <p className="mt-2 text-sm font-medium text-teal-600">{formatCompactNumber(mostDownloaded.totalDownloads, locale)} {t.common.downloads}</p>
+          <p className="mt-3 line-clamp-2 text-lg font-semibold">{mostDownloaded?.assetName || t.common.noDataYet}</p>
+          <p className="mt-2 text-sm font-medium text-teal-600">{formatCompactNumber(mostDownloaded?.totalDownloads || 0, locale)} {t.common.downloads}</p>
         </Card>
       </div>
 
@@ -33,20 +43,20 @@ export default async function ReleasesPage() {
           <Card>
             <SectionTitle title={t.releases.cumulativeDownloads} />
             <div className="mt-4">
-              <DownloadsAreaChart data={mockOverview.growthTrends} label={t.common.downloads} />
+              {overview.growthTrends.length > 0 ? <DownloadsAreaChart data={overview.growthTrends} label={t.common.downloads} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
             </div>
           </Card>
           <Card>
             <SectionTitle title={t.releases.dailyDownloadsByRepo} />
             <div className="mt-4">
-              <TrafficChart data={mockOverview.growthTrends} labels={{ views: t.common.views, clones: t.common.clones }} />
+              {overview.growthTrends.length > 0 ? <TrafficChart data={overview.growthTrends} labels={{ views: t.common.views, clones: t.common.clones }} /> : <EmptyState title={t.common.noDataYet} description={sourceDescription} />}
             </div>
           </Card>
         </div>
         <Card>
           <SectionTitle title={t.releases.topAssets} />
           <div className="mt-4 space-y-3">
-            {mockReleaseAssets.map((asset, index) => (
+            {assets.length > 0 ? assets.map((asset, index) => (
               <div key={asset.id} className="rounded-lg border border-slate-100 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-50 text-sm font-semibold text-teal-700">{index + 1}</span>
@@ -56,7 +66,7 @@ export default async function ReleasesPage() {
                 <div className="mt-1 truncate text-sm text-slate-500">{asset.assetName}</div>
                 <div className="mt-2 text-sm font-semibold">{formatCompactNumber(asset.totalDownloads, locale)} {t.common.downloads}</div>
               </div>
-            ))}
+            )) : <EmptyState title={t.common.noReleases} description={sourceDescription} />}
           </div>
         </Card>
       </div>
@@ -78,7 +88,7 @@ export default async function ReleasesPage() {
               </tr>
             </thead>
             <tbody>
-              {mockReleaseAssets.map((asset) => (
+              {assets.map((asset) => (
                 <tr key={asset.id}>
                   <td className="px-3 py-4 font-medium">{asset.repository}</td>
                   <td className="px-3 py-4">{asset.tagName}</td>
@@ -95,8 +105,11 @@ export default async function ReleasesPage() {
               ))}
             </tbody>
           </table>
+          {assets.length === 0 ? <div className="mt-4"><EmptyState title={t.common.noReleases} description={sourceDescription} /></div> : null}
         </div>
       </Card>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -20,7 +20,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
     databaseUrl: env.DATABASE_URL,
     githubToken: env.GITHUB_TOKEN,
     githubApiBaseUrl: env.GITHUB_API_BASE_URL || "https://api.github.com",
-    mockGitHub: env.MOCK_GITHUB !== "false" || !env.GITHUB_TOKEN,
+    mockGitHub: env.MOCK_GITHUB?.toLowerCase() === "true",
     syncConcurrency: Number(env.SYNC_CONCURRENCY || 3),
     aiEnabled: env.AI_ENABLED === "true"
   };

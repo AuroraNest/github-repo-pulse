@@ -1,7 +1,7 @@
-import { findRepository, mockRepositories } from "@repopulse/core";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
+import { getRepositoryData, isGitHubConfigurationRequired } from "../../../../lib/data-source";
 import { requireSession } from "../../../../lib/session";
 
 type RouteContext = {
@@ -15,7 +15,11 @@ const patchSchema = z.object({
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
-  const repository = findRepository(mockRepositories, id);
+  const { source, repository } = await getRepositoryData(id);
+  if (isGitHubConfigurationRequired(source)) {
+    return jsonError("GITHUB_CONFIGURATION_REQUIRED", source.message, 409);
+  }
+
   if (!repository) {
     return jsonError("NOT_FOUND", "Repository not found.", 404);
   }
@@ -28,7 +32,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if (!session.ok) return session.response;
 
   const { id } = await context.params;
-  const repository = findRepository(mockRepositories, id);
+  const { source, repository } = await getRepositoryData(id);
+  if (isGitHubConfigurationRequired(source)) {
+    return jsonError("GITHUB_CONFIGURATION_REQUIRED", source.message, 409);
+  }
+
   if (!repository) {
     return jsonError("NOT_FOUND", "Repository not found.", 404);
   }

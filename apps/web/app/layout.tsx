@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AppShell } from "../components/shell";
+import { getGitHubDataSource } from "../lib/data-source";
 import { getDictionary } from "../lib/locale";
 import "./globals.css";
 
@@ -11,11 +12,12 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const { locale, t } = await getDictionary();
+  const githubSource = getGitHubDataSource();
 
   return (
     <html lang={locale}>
       <body>
-        <AppShell locale={locale} labels={t}>
+        <AppShell locale={locale} labels={t} githubSource={githubSource}>
           {children}
         </AppShell>
       </body>

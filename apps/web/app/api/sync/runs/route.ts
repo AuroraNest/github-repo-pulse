@@ -1,6 +1,7 @@
-import { mockSyncRuns } from "@repopulse/core";
 import { jsonOk } from "../../../../lib/api";
+import { getSyncRunData, githubDataSourcePayload } from "../../../../lib/data-source";
 
 export async function GET() {
-  return jsonOk({ runs: mockSyncRuns });
+  const { source, runs } = getSyncRunData();
+  return jsonOk({ github: githubDataSourcePayload(source), runs });
 }
