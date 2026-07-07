@@ -6,6 +6,7 @@ import { getReleaseData, getRepositoryData, isGitHubConfigurationRequired } from
 import { formatCompactNumber } from "../../../lib/format";
 import { translateVisibility, type Locale } from "../../../lib/i18n";
 import { getDictionary } from "../../../lib/locale";
+import { RepositorySyncButton } from "./repository-sync-button";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,16 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
             <ExternalLink size={16} />
             {t.common.github}
           </Link>
-          <button className="h-10 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white">{t.repositoryDetail.syncNow}</button>
+          <RepositorySyncButton
+            labels={{
+              failed: t.repositories.syncFailed,
+              queued: t.repositories.syncQueued,
+              syncNow: t.repositoryDetail.syncNow,
+              working: t.repositories.working
+            }}
+            repositoryId={repo.id}
+            repositoryName={repo.fullName}
+          />
         </div>
       </div>
 
