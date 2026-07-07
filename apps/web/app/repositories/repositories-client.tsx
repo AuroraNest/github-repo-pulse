@@ -1,7 +1,7 @@
 "use client";
 
 import type { ApiResponse, RepositorySummary, RepositorySyncResult } from "@repopulse/core";
-import { Eye, GitFork, Github, RefreshCw, Star, type LucideIcon } from "lucide-react";
+import { BarChart3, Eye, GitFork, Github, PauseCircle, PlayCircle, RefreshCw, Star, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Card, Chip, EmptyState } from "../../components/ui";
@@ -211,19 +211,27 @@ export function RepositoriesClient({
                 <td className="px-3 py-4">{formatDate(repo.lastSyncAt, locale)}</td>
                 <td className="px-3 py-4"><Chip tone={repo.status === "warning" ? "yellow" : repo.status === "error" ? "red" : "green"}>{translateStatus(repo.status, locale)}</Chip></td>
                 <td className="px-3 py-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Link href={`/repositories/${repo.id}`} className="rounded-lg border border-slate-200 px-3 py-2 font-medium">{labels.view}</Link>
-                    <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 font-medium disabled:opacity-60" disabled={busy !== null} onClick={() => syncRepository(repo)} type="button">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Link href={`/repositories/${repo.id}`} className={actionClass("primary")}>
+                      <Eye size={14} />
+                      {labels.view}
+                    </Link>
+                    <button className={actionClass()} disabled={busy !== null} onClick={() => syncRepository(repo)} type="button">
                       <RefreshCw className={busy === `${repo.id}-sync` ? "animate-spin" : ""} size={14} />
                       {busy === `${repo.id}-sync` ? labels.working : labels.syncNow}
                     </button>
-                    <button className="rounded-lg border border-slate-200 px-3 py-2 font-medium disabled:opacity-60" disabled={busy !== null} onClick={() => patchRepository(repo, { tracked: !repo.tracked }, "tracked")} type="button">
+                    <button className={actionClass()} disabled={busy !== null} onClick={() => patchRepository(repo, { tracked: !repo.tracked }, "tracked")} type="button">
+                      {repo.tracked ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
                       {repo.tracked ? labels.pauseTracking : labels.resumeTracking}
                     </button>
-                    <button className="rounded-lg border border-slate-200 px-3 py-2 font-medium disabled:opacity-60" disabled={busy !== null} onClick={() => patchRepository(repo, { favorite: !repo.favorite }, "favorite")} type="button">
+                    <button className={actionClass()} disabled={busy !== null} onClick={() => patchRepository(repo, { favorite: !repo.favorite }, "favorite")} type="button">
+                      <Star className={repo.favorite ? "fill-amber-400 text-amber-400" : ""} size={14} />
                       {repo.favorite ? labels.unfavorite : labels.favorite}
                     </button>
-                    <Link href="/reports" className="rounded-lg border border-slate-200 px-3 py-2 font-medium">{labels.reports}</Link>
+                    <Link href="/reports" className={actionClass()}>
+                      <BarChart3 size={14} />
+                      {labels.reports}
+                    </Link>
                   </div>
                 </td>
               </tr>
@@ -249,6 +257,13 @@ function Metric({ icon: Icon, value, locale }: { icon: LucideIcon; value: number
       {formatCompactNumber(value, locale)}
     </span>
   );
+}
+
+function actionClass(tone: "primary" | "default" = "default") {
+  const toneClass = tone === "primary"
+    ? "text-blue-700 hover:border-blue-200 hover:bg-blue-50"
+    : "text-slate-600 hover:border-slate-200 hover:bg-slate-50";
+  return `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${toneClass}`;
 }
 
 function sortRepositories(a: RepositorySummary, b: RepositorySummary, sortBy: SortKey) {
