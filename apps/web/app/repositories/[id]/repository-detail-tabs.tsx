@@ -75,7 +75,7 @@ export function RepositoryDetailTabs({
               {growthTrends.length > 0 ? <GrowthChart data={growthTrends} labels={{ stars: labels.stars, forks: labels.forks, downloads: labels.downloads }} /> : <EmptyState title={labels.noDataYet} description={sourceDescription} />}
             </div>
           </Card>
-          <FunnelCard labels={labels} locale={locale} repo={repo} />
+          {useDemoContent ? <FunnelCard labels={labels} locale={locale} repo={repo} /> : <EmptyState title={labels.noDataYet} description={sourceDescription} />}
         </div>
       ) : null}
 
