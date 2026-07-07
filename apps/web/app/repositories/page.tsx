@@ -6,8 +6,13 @@ import { RepositoriesClient } from "./repositories-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function RepositoriesPage() {
+type PageProps = {
+  searchParams?: Promise<{ search?: string }> | { search?: string };
+};
+
+export default async function RepositoriesPage({ searchParams }: PageProps) {
   const { locale, t } = await getDictionary();
+  const params = await searchParams;
   const { source, repositories } = await getRepositoryCollection();
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
   const fastest = [...repositories].sort((a, b) => b.todayDownloads - a.todayDownloads || b.stars - a.stars)[0];
@@ -37,6 +42,7 @@ export default async function RepositoriesPage() {
 
       <RepositoriesClient
         configurationRequired={isGitHubConfigurationRequired(source)}
+        initialQuery={params?.search || ""}
         initialRepositories={repositories}
         labels={{
           columns: t.repositories.columns,

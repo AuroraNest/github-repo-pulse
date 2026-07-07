@@ -39,12 +39,14 @@ type Feedback = {
 
 export function RepositoriesClient({
   configurationRequired,
+  initialQuery,
   initialRepositories,
   labels,
   locale,
   sourceDescription
 }: {
   configurationRequired: boolean;
+  initialQuery?: string;
   initialRepositories: RepositorySummary[];
   labels: Labels;
   locale: Locale;
@@ -52,7 +54,7 @@ export function RepositoriesClient({
 }) {
   const [repositories, setRepositories] = useState(initialRepositories);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery || "");
   const [sortBy, setSortBy] = useState<SortKey>("stars");
   const [busy, setBusy] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);

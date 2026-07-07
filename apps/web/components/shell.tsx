@@ -1,9 +1,10 @@
-import { Activity, BarChart3, Bell, Database, Download, Github, LayoutDashboard, RefreshCw, Search, Settings, Star } from "lucide-react";
+import { Activity, BarChart3, Database, Download, Github, LayoutDashboard, Settings, Star } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { GitHubDataSource } from "../lib/data-source";
 import type { Dictionary, Locale } from "../lib/i18n";
 import { LanguageSwitcher } from "./language-switcher";
+import { TopbarControls } from "./topbar-controls";
 import { Chip } from "./ui";
 
 const navItems = [
@@ -87,19 +88,10 @@ function Topbar({ labels, locale, githubSource }: { labels: Dictionary; locale: 
           <h1 className="text-2xl font-semibold text-slate-950">{labels.common.dashboardTitle}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex h-10 min-w-64 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-500">
-            <Search size={16} />
-            {labels.common.searchRepositories}
-          </div>
+          <TopbarControls labels={labels.common} status={status} />
           <Chip tone={status.tone}>{status.chip}</Chip>
           <Chip tone="slate">{githubSource.demo ? labels.common.lastSync : labels.common.noDataYet}</Chip>
           <LanguageSwitcher locale={locale} labels={labels.common} />
-          <button className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600" aria-label={labels.common.refreshData}>
-            <RefreshCw size={16} />
-          </button>
-          <button className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600" aria-label={labels.common.alerts}>
-            <Bell size={16} />
-          </button>
           <Link href="/setup" className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white">
             <Activity size={16} />
             {labels.common.setup}
