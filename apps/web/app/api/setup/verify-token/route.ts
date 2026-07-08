@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
 import { persistVerifiedGitHubToken } from "../../../../lib/github-connection";
-import { setRuntimeGitHubToken } from "../../../../lib/runtime-github-token";
+import { attachRuntimeGitHubToken, setRuntimeGitHubToken } from "../../../../lib/runtime-github-token";
 import { requireSession } from "../../../../lib/session";
 
 const verifySchema = z.object({
@@ -38,5 +38,5 @@ export async function POST(request: NextRequest) {
 
   setRuntimeGitHubToken(body.data.token);
 
-  return jsonOk(result);
+  return attachRuntimeGitHubToken(jsonOk(result), body.data.token);
 }

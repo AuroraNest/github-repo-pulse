@@ -2,7 +2,7 @@ import { verifyGitHubToken } from "@repopulse/core";
 import { jsonError, jsonOk } from "../../../../../lib/api";
 import { getGitHubDataSource, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
 import { persistVerifiedGitHubToken } from "../../../../../lib/github-connection";
-import { readGitHubRuntimeConfig } from "../../../../../lib/runtime-github-token";
+import { attachRuntimeGitHubToken, readGitHubRuntimeConfig } from "../../../../../lib/runtime-github-token";
 import { requireSession } from "../../../../../lib/session";
 import { NextRequest } from "next/server";
 
@@ -34,5 +34,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return jsonOk(result);
+  const response = jsonOk(result);
+  return config.githubToken ? attachRuntimeGitHubToken(response, config.githubToken) : response;
 }

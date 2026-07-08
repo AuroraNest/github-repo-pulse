@@ -3,6 +3,8 @@ import { readGitHubConnection, saveGitHubConnection } from "@repopulse/db";
 
 export async function persistVerifiedGitHubToken(token: string, result: TokenVerificationResult) {
   const config = readRuntimeConfig();
+  if (!config.databaseUrl) return;
+
   const encrypted = encryptAes256Gcm(token, config.sessionSecret);
 
   await saveGitHubConnection({

@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
 import { persistVerifiedGitHubToken } from "../../../../lib/github-connection";
-import { setRuntimeGitHubToken } from "../../../../lib/runtime-github-token";
+import { attachRuntimeGitHubToken, setRuntimeGitHubToken } from "../../../../lib/runtime-github-token";
 import { requireSession } from "../../../../lib/session";
 
 const saveTokenSchema = z.object({
@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
 
   setRuntimeGitHubToken(body.data.token);
 
-  return jsonOk({
+  return attachRuntimeGitHubToken(jsonOk({
     saved: true,
     account: result.account,
     tokenMask: result.tokenMask
-  });
+  }), body.data.token);
 }
