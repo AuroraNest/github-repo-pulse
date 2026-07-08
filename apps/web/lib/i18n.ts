@@ -100,8 +100,8 @@ export const dictionary = {
     login: {
       title: "Sign in",
       subtitle: "Use the local admin credentials configured for this RepoPulse instance.",
-      email: "邮箱",
-      password: "密码",
+      email: "Email",
+      password: "Password",
       submit: "Sign in",
       submitting: "Signing in...",
       failed: "Login failed."
@@ -354,8 +354,8 @@ export const dictionary = {
     login: {
       title: "登录",
       subtitle: "使用此 RepoPulse 实例配置的本地管理员凭据.",
-      email: "Email",
-      password: "Password",
+      email: "邮箱",
+      password: "密码",
       submit: "登录",
       submitting: "登录中...",
       failed: "登录失败."
