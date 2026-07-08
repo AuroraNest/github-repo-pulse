@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { jsonError, jsonOk } from "../../../../lib/api";
 import { getReportGenerationData, isGitHubConfigurationRequired } from "../../../../lib/data-source";
+import { getLocale } from "../../../../lib/locale";
 
 const generateSchema = z.object({
   type: z.enum(["daily", "weekly", "monthly"]).default("daily"),
@@ -18,6 +19,7 @@ export async function POST(request: NextRequest) {
   }
 
   const config = readRuntimeConfig();
+  const locale = await getLocale();
   const reportData = await getReportGenerationData();
   if (isGitHubConfigurationRequired(reportData.source)) {
     return jsonError("GITHUB_CONFIGURATION_REQUIRED", reportData.source.message, 409);
@@ -28,7 +30,8 @@ export async function POST(request: NextRequest) {
     overview: reportData.overview,
     repositories: reportData.repositories,
     assets: reportData.assets,
-    aiEnabled: body.data.useAI && config.aiEnabled
+    aiEnabled: body.data.useAI && config.aiEnabled,
+    locale
   });
   await saveReport({
     id: report.id,

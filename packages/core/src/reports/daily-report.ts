@@ -6,58 +6,65 @@ type GenerateDailyReportInput = {
   repositories: RepositorySummary[];
   assets: ReleaseAssetSummary[];
   aiEnabled: boolean;
+  locale?: "en" | "zh";
 };
 
 export function generateDailyReport(input: GenerateDailyReportInput): ReportData {
+  const locale = input.locale || "en";
+  const copy = locale === "zh" ? zhCopy : enCopy;
   const topRepo = [...input.repositories].sort((a, b) => b.todayDownloads - a.todayDownloads)[0];
   const topAsset = [...input.assets].sort((a, b) => b.todayDownloads - a.todayDownloads)[0];
-  const topRepoName = topRepo?.name || "No repository";
+  const topRepoName = topRepo?.name || copy.noRepository;
   const topRepoDownloads = topRepo?.todayDownloads || 0;
-  const summary = `${topRepoName} led today's repository activity with ${topRepoDownloads} new downloads, while tracked repositories reached ${input.overview.kpis.totalStars.toLocaleString()} total stars.`;
+  const numberLocale = locale === "zh" ? "zh-CN" : "en-US";
+  const summary = copy.summary(topRepoName, topRepoDownloads, input.overview.kpis.totalStars, numberLocale);
   const highlights = [
-    topAsset ? `${topAsset.assetName} added ${topAsset.todayDownloads} downloads today.` : "No release download data is available yet.",
-    `${input.overview.kpis.trackedRepositories} repositories are currently tracked.`,
-    `${input.overview.kpis.visitors14d.toLocaleString()} aggregated 14-day unique visitors were observed across tracked repositories.`
+    topAsset ? copy.assetDownloads(topAsset.assetName, topAsset.todayDownloads) : copy.noReleaseData,
+    copy.trackedRepositories(input.overview.kpis.trackedRepositories),
+    copy.visitors(input.overview.kpis.visitors14d, numberLocale)
   ];
   const anomalies = input.repositories
     .filter((repo) => repo.status !== "healthy")
-    .map((repo) => `${repo.fullName} needs attention: ${repo.status}.`);
+    .map((repo) => copy.needsAttention(repo.fullName, repo.status));
   const suggestedActions = [
-    topAsset ? `Review the ${topAsset.repository} release notes while download momentum is high.` : "Sync release assets before reviewing download momentum.",
-    "Check repositories with traffic permission warnings before the next scheduled sync.",
-    "Use favorites to pin the repositories that should appear first in daily reviews."
+    topAsset ? copy.reviewRelease(topAsset.repository) : copy.syncReleaseAssets,
+    copy.checkTrafficWarnings,
+    copy.useFavorites
   ];
   const kpis = [
-    { label: "Total Downloads", value: input.overview.kpis.totalDownloads.toLocaleString(), change: `+${input.overview.kpis.downloadsToday} today` },
-    { label: "Total Stars", value: input.overview.kpis.totalStars.toLocaleString(), change: "+3.8%" },
-    { label: "Total Forks", value: input.overview.kpis.totalForks.toLocaleString(), change: "+2.1%" },
-    { label: "14-Day Visitors", value: input.overview.kpis.visitors14d.toLocaleString(), change: "+9.1%" }
+    { label: copy.totalDownloads, value: input.overview.kpis.totalDownloads.toLocaleString(numberLocale), change: copy.todayChange(input.overview.kpis.downloadsToday) },
+    { label: copy.totalStars, value: input.overview.kpis.totalStars.toLocaleString(numberLocale), change: "+3.8%" },
+    { label: copy.totalForks, value: input.overview.kpis.totalForks.toLocaleString(numberLocale), change: "+2.1%" },
+    { label: copy.visitors14d, value: input.overview.kpis.visitors14d.toLocaleString(numberLocale), change: "+9.1%" }
   ];
   const fastestMovers = input.overview.fastestGrowingRepositories.map((repo) => ({
     repository: repo.name,
-    metric: "Growth",
+    metric: copy.growth,
     change: `+${repo.growthPercent}%`,
-    value: repo.metricValue.toLocaleString()
+    value: repo.metricValue.toLocaleString(numberLocale)
   }));
+  const title = copy.title(input.date);
+  const emptyAnomalies = [copy.noAnomalies];
 
   return {
-    id: `daily-${input.date}`,
+    id: locale === "zh" ? `daily-${input.date}-zh` : `daily-${input.date}`,
     type: "daily",
-    title: `RepoPulse Daily Report - ${input.date}`,
+    title,
     generatedAt: `${input.date}T08:10:00Z`,
     summary,
     kpis,
     highlights,
-    anomalies: anomalies.length > 0 ? anomalies : ["No anomalies detected."],
+    anomalies: anomalies.length > 0 ? anomalies : emptyAnomalies,
     fastestMovers,
     suggestedActions,
-    markdown: renderMarkdownReport(input.date, summary, kpis, highlights, anomalies, fastestMovers, input.assets, suggestedActions),
+    markdown: renderMarkdownReport(title, copy, summary, kpis, highlights, anomalies.length > 0 ? anomalies : emptyAnomalies, fastestMovers, input.assets, suggestedActions),
     aiGenerated: input.aiEnabled
   };
 }
 
 function renderMarkdownReport(
-  date: string,
+  title: string,
+  copy: ReportCopy,
   summary: string,
   kpis: ReportData["kpis"],
   highlights: string[],
@@ -70,33 +77,141 @@ function renderMarkdownReport(
   const moverRows = fastestMovers.map((mover) => `| ${mover.repository} | ${mover.metric} | ${mover.change} | ${mover.value} |`).join("\n");
   const releaseRows = assets.map((asset) => `| ${asset.assetName} | ${asset.totalDownloads} | +${asset.todayDownloads} |`).join("\n");
 
-  return `# RepoPulse Daily Report - ${date}
+  return `# ${title}
 
-## Summary
+## ${copy.summaryHeading}
 ${summary}
 
-## Key Metrics
-| Metric | Value | Change |
+## ${copy.keyMetricsHeading}
+| ${copy.metricColumn} | ${copy.valueColumn} | ${copy.changeColumn} |
 | --- | ---: | --- |
 ${metricRows}
 
-## Highlights
+## ${copy.highlightsHeading}
 ${highlights.map((item) => `- ${item}`).join("\n")}
 
-## Anomalies
-${(anomalies.length > 0 ? anomalies : ["No anomalies detected."]).map((item) => `- ${item}`).join("\n")}
+## ${copy.anomaliesHeading}
+${anomalies.map((item) => `- ${item}`).join("\n")}
 
-## Top Repositories
-| Repository | Metric | Change | Value |
+## ${copy.topRepositoriesHeading}
+| ${copy.repositoryColumn} | ${copy.metricColumn} | ${copy.changeColumn} | ${copy.valueColumn} |
 | --- | --- | ---: | ---: |
 ${moverRows}
 
-## Release Downloads
-| Asset | Downloads | Today |
+## ${copy.releaseDownloadsHeading}
+| ${copy.assetColumn} | ${copy.downloadsColumn} | ${copy.todayColumn} |
 | --- | ---: | ---: |
 ${releaseRows}
 
-## Suggested Actions
+## ${copy.suggestedActionsHeading}
 ${suggestedActions.map((item) => `- ${item}`).join("\n")}
 `;
 }
+
+type ReportCopy = {
+  anomaliesHeading: string;
+  assetColumn: string;
+  assetDownloads: (assetName: string, downloads: number) => string;
+  changeColumn: string;
+  checkTrafficWarnings: string;
+  downloadsColumn: string;
+  growth: string;
+  highlightsHeading: string;
+  keyMetricsHeading: string;
+  metricColumn: string;
+  needsAttention: (fullName: string, status: string) => string;
+  noAnomalies: string;
+  noReleaseData: string;
+  noRepository: string;
+  releaseDownloadsHeading: string;
+  repositoryColumn: string;
+  reviewRelease: (repository: string) => string;
+  summary: (topRepoName: string, downloads: number, totalStars: number, numberLocale: string) => string;
+  summaryHeading: string;
+  suggestedActionsHeading: string;
+  syncReleaseAssets: string;
+  title: (date: string) => string;
+  todayChange: (downloads: number) => string;
+  todayColumn: string;
+  topRepositoriesHeading: string;
+  totalDownloads: string;
+  totalForks: string;
+  totalStars: string;
+  trackedRepositories: (count: number) => string;
+  useFavorites: string;
+  valueColumn: string;
+  visitors: (count: number, numberLocale: string) => string;
+  visitors14d: string;
+};
+
+const enCopy: ReportCopy = {
+  anomaliesHeading: "Anomalies",
+  assetColumn: "Asset",
+  assetDownloads: (assetName, downloads) => `${assetName} added ${downloads} downloads today.`,
+  changeColumn: "Change",
+  checkTrafficWarnings: "Check repositories with traffic permission warnings before the next scheduled sync.",
+  downloadsColumn: "Downloads",
+  growth: "Growth",
+  highlightsHeading: "Highlights",
+  keyMetricsHeading: "Key Metrics",
+  metricColumn: "Metric",
+  needsAttention: (fullName, status) => `${fullName} needs attention: ${status}.`,
+  noAnomalies: "No anomalies detected.",
+  noReleaseData: "No release download data is available yet.",
+  noRepository: "No repository",
+  releaseDownloadsHeading: "Release Downloads",
+  repositoryColumn: "Repository",
+  reviewRelease: (repository) => `Review the ${repository} release notes while download momentum is high.`,
+  summary: (topRepoName, downloads, totalStars, numberLocale) => `${topRepoName} led today's repository activity with ${downloads} new downloads, while tracked repositories reached ${totalStars.toLocaleString(numberLocale)} total stars.`,
+  summaryHeading: "Summary",
+  suggestedActionsHeading: "Suggested Actions",
+  syncReleaseAssets: "Sync release assets before reviewing download momentum.",
+  title: (date) => `RepoPulse Daily Report - ${date}`,
+  todayChange: (downloads) => `+${downloads} today`,
+  todayColumn: "Today",
+  topRepositoriesHeading: "Top Repositories",
+  totalDownloads: "Total Downloads",
+  totalForks: "Total Forks",
+  totalStars: "Total Stars",
+  trackedRepositories: (count) => `${count} repositories are currently tracked.`,
+  useFavorites: "Use favorites to pin the repositories that should appear first in daily reviews.",
+  valueColumn: "Value",
+  visitors: (count, numberLocale) => `${count.toLocaleString(numberLocale)} aggregated 14-day unique visitors were observed across tracked repositories.`,
+  visitors14d: "14-Day Visitors"
+};
+
+const zhCopy: ReportCopy = {
+  anomaliesHeading: "异常",
+  assetColumn: "资产",
+  assetDownloads: (assetName, downloads) => `${assetName} 今日新增 ${downloads} 次下载.`,
+  changeColumn: "变化",
+  checkTrafficWarnings: "下次计划同步前检查存在流量权限告警的仓库.",
+  downloadsColumn: "下载量",
+  growth: "增长",
+  highlightsHeading: "今日亮点",
+  keyMetricsHeading: "关键指标",
+  metricColumn: "指标",
+  needsAttention: (fullName, status) => `${fullName} 需要关注: ${status}.`,
+  noAnomalies: "未发现异常.",
+  noReleaseData: "暂无发布下载数据.",
+  noRepository: "暂无仓库",
+  releaseDownloadsHeading: "发布下载",
+  repositoryColumn: "仓库",
+  reviewRelease: (repository) => `下载热度较高, 建议检查 ${repository} 的发布说明.`,
+  summary: (topRepoName, downloads, totalStars, numberLocale) => `${topRepoName} 今日仓库活动领先, 新增 ${downloads} 次下载, 已跟踪仓库累计 ${totalStars.toLocaleString(numberLocale)} 个 Stars.`,
+  summaryHeading: "摘要",
+  suggestedActionsHeading: "建议操作",
+  syncReleaseAssets: "先同步发布资产, 再评估下载趋势.",
+  title: (date) => `RepoPulse 日报 - ${date}`,
+  todayChange: (downloads) => `+${downloads} 今日`,
+  todayColumn: "今日",
+  topRepositoriesHeading: "热门仓库",
+  totalDownloads: "总下载量",
+  totalForks: "总 Forks",
+  totalStars: "总 Stars",
+  trackedRepositories: (count) => `当前已跟踪 ${count} 个仓库.`,
+  useFavorites: "使用收藏固定每日巡检时优先查看的仓库.",
+  valueColumn: "值",
+  visitors: (count, numberLocale) => `已跟踪仓库近 14 天累计 ${count.toLocaleString(numberLocale)} 个独立访客.`,
+  visitors14d: "14 天访客"
+};
