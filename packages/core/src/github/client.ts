@@ -120,6 +120,39 @@ export async function listAccessibleRepositories(options: GitHubClientOptions): 
   }));
 }
 
+export async function listRepositoriesWithTrafficCounts(repositories: RepositorySummary[], options: GitHubClientOptions): Promise<RepositorySummary[]> {
+  if (options.mock) return repositories;
+
+  const client = createGitHubClient(options);
+  if (!client) {
+    throw new GitHubConfigurationRequiredError();
+  }
+
+  const enrichedRepositories: RepositorySummary[] = [];
+  for (const repository of repositories) {
+    const [views, clones] = await Promise.all([
+      client.request("GET /repos/{owner}/{repo}/traffic/views", {
+        owner: repository.owner,
+        repo: repository.name,
+        per: "day"
+      }).catch(() => null),
+      client.request("GET /repos/{owner}/{repo}/traffic/clones", {
+        owner: repository.owner,
+        repo: repository.name,
+        per: "day"
+      }).catch(() => null)
+    ]);
+
+    enrichedRepositories.push({
+      ...repository,
+      visitors14d: views ? readTrafficNumber(views.data, "uniques") : 0,
+      clones14d: clones ? readTrafficNumber(clones.data, "count") : 0
+    });
+  }
+
+  return enrichedRepositories;
+}
+
 export async function syncRepositorySkeleton(repository: RepositorySummary, options: GitHubClientOptions): Promise<RepositorySyncResult> {
   const client = createGitHubClient(options);
 
@@ -248,6 +281,15 @@ function classifyGitHubError(error: unknown): RepositorySyncResult["errorCode"] 
   if (status === 403) return "GITHUB_FORBIDDEN";
   if (status === 429) return "GITHUB_RATE_LIMITED";
   return "UNKNOWN";
+}
+
+function readTrafficNumber(data: unknown, preferredKey: "count" | "uniques") {
+  if (!data || typeof data !== "object") return 0;
+  const summary = data as { count?: unknown; uniques?: unknown };
+  const preferredValue = summary[preferredKey];
+  if (typeof preferredValue === "number") return preferredValue;
+  const fallbackValue = preferredKey === "count" ? summary.uniques : summary.count;
+  return typeof fallbackValue === "number" ? fallbackValue : 0;
 }
 
 function formatBytes(bytes: number) {

@@ -1,6 +1,7 @@
 import {
   findRepository,
   listAccessibleRepositories,
+  listRepositoriesWithTrafficCounts,
   listReleaseAssetsForRepositories,
   mockOverview,
   mockReleaseAssets,
@@ -78,8 +79,28 @@ export async function getOverviewData(): Promise<{ source: GitHubDataSource; ove
     return { source, overview: mockOverview };
   }
 
+  const trackedRepositories = getTrackedRepositories(repositories);
   const runs = await readSyncRuns(5).catch(() => []);
-  return { source, overview: buildOverview(getTrackedRepositories(repositories), [], buildSyncActivity(runs)) };
+  if (source.mode !== "live") {
+    return { source, overview: buildOverview(trackedRepositories, [], buildSyncActivity(runs)) };
+  }
+
+  const config = await readGitHubRuntimeConfig();
+  const githubOptions = {
+    token: config.githubToken,
+    baseUrl: config.githubApiBaseUrl,
+    mock: false
+  };
+  const [trafficRepositories, assets] = await Promise.all([
+    listRepositoriesWithTrafficCounts(trackedRepositories, githubOptions).catch(() => trackedRepositories.map((repository) => ({
+      ...repository,
+      visitors14d: 0,
+      clones14d: 0
+    }))),
+    listReleaseAssetsForRepositories(trackedRepositories, githubOptions).catch(() => [])
+  ]);
+
+  return { source, overview: buildOverview(trafficRepositories, assets, buildSyncActivity(runs)) };
 }
 
 export async function getReportGenerationData(): Promise<{ source: GitHubDataSource; overview: OverviewData; repositories: RepositorySummary[]; assets: ReleaseAssetSummary[] }> {
