@@ -128,9 +128,8 @@ export async function listRepositoriesWithTrafficCounts(repositories: Repository
     throw new GitHubConfigurationRequiredError();
   }
 
-  const enrichedRepositories: RepositorySummary[] = [];
   const dailyTraffic = new Map<string, { views: number; clones: number }>();
-  for (const repository of repositories) {
+  const enrichedRepositories = await Promise.all(repositories.map(async (repository) => {
     const [views, clones] = await Promise.all([
       client.request("GET /repos/{owner}/{repo}/traffic/views", {
         owner: repository.owner,
@@ -144,12 +143,6 @@ export async function listRepositoriesWithTrafficCounts(repositories: Repository
       }).catch(() => null)
     ]);
 
-    enrichedRepositories.push({
-      ...repository,
-      visitors14d: views ? readTrafficNumber(views.data, "uniques") : 0,
-      clones14d: clones ? readTrafficNumber(clones.data, "count") : 0
-    });
-
     for (const point of readTrafficSeries(views?.data, "views", "uniques")) {
       const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
       dailyTraffic.set(point.date, { ...current, views: current.views + point.value });
@@ -158,7 +151,13 @@ export async function listRepositoriesWithTrafficCounts(repositories: Repository
       const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
       dailyTraffic.set(point.date, { ...current, clones: current.clones + point.value });
     }
-  }
+
+    return {
+      ...repository,
+      visitors14d: views ? readTrafficNumber(views.data, "uniques") : 0,
+      clones14d: clones ? readTrafficNumber(clones.data, "count") : 0
+    };
+  }));
 
   return {
     repositories: enrichedRepositories,
@@ -244,12 +243,12 @@ export async function listReleaseAssetsForRepositories(repositories: RepositoryS
     throw new GitHubConfigurationRequiredError();
   }
 
-  const assets: ReleaseAssetSummary[] = [];
-  for (const repository of repositories) {
+  const assets = await Promise.all(repositories.map(async (repository) => {
     const releases = await client.rest.repos.listReleases({ owner: repository.owner, repo: repository.name, per_page: 30 }).catch(() => ({ data: [] }));
+    const repositoryAssets: ReleaseAssetSummary[] = [];
     for (const release of releases.data) {
       for (const asset of release.assets || []) {
-        assets.push({
+        repositoryAssets.push({
           id: `github-asset-${asset.id}`,
           repositoryId: repository.id,
           repository: repository.name,
@@ -266,9 +265,10 @@ export async function listReleaseAssetsForRepositories(repositories: RepositoryS
         });
       }
     }
-  }
+    return repositoryAssets;
+  }));
 
-  return assets;
+  return assets.flat();
 }
 
 export function maskToken(token: string) {
