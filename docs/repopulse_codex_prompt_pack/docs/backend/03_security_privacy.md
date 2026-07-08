@@ -67,7 +67,7 @@ Include private repository names in AI summaries
 MVP 可实现简单管理员登录：
 
 - `ADMIN_EMAIL`
-- `ADMIN_PASSWORD_HASH`
+- `ADMIN_PASSWORD`
 - httpOnly cookie。
 - CSRF token for mutations optional。
 

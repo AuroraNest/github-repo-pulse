@@ -41,8 +41,8 @@ DATABASE_URL=file:./data/repopulse.db
 
 # Auth
 DISABLE_AUTH=true
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD_HASH=
+ADMIN_EMAIL=admin@local.com
+ADMIN_PASSWORD=123456
 
 # GitHub
 GITHUB_TOKEN=

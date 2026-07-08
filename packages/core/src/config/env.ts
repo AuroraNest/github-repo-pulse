@@ -15,8 +15,8 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
   return {
     appUrl: env.APP_URL || "http://localhost:3000",
     sessionSecret: env.SESSION_SECRET || "dev-session-secret",
-    adminEmail: env.ADMIN_EMAIL || "admin@example.com",
-    adminPassword: env.ADMIN_PASSWORD || "change-me-locally",
+    adminEmail: env.ADMIN_EMAIL || "admin@local.com",
+    adminPassword: env.ADMIN_PASSWORD || "123456",
     databaseUrl: env.DATABASE_URL,
     githubToken: env.GITHUB_TOKEN,
     githubApiBaseUrl: env.GITHUB_API_BASE_URL || "https://api.github.com",

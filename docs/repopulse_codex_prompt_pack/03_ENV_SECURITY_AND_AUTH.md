@@ -25,8 +25,8 @@ NODE_ENV=production
 PORT=3000
 
 # Auth
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=change_me_now
+ADMIN_EMAIL=admin@local.com
+ADMIN_PASSWORD=123456
 SESSION_SECRET=replace_with_random_32_chars
 
 # Encryption

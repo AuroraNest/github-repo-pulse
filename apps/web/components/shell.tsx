@@ -18,7 +18,7 @@ const navItems = [
   { href: "/settings", labelKey: "settings", icon: Settings }
 ] as const;
 
-export function AppShell({ children, labels, locale, githubSource, trackedRepositoriesCount }: { children: ReactNode; labels: Dictionary; locale: Locale; githubSource: GitHubDataSource; trackedRepositoriesCount: number }) {
+export function AppShell({ children, labels, locale, githubSource, trackedRepositoriesCount, adminEmail }: { children: ReactNode; labels: Dictionary; locale: Locale; githubSource: GitHubDataSource; trackedRepositoriesCount: number; adminEmail: string }) {
   const pathname = usePathname();
   const status = getSourceStatus(labels, githubSource);
   const displayedTrackedCount = githubSource.demo && trackedRepositoriesCount === 0 ? 4 : trackedRepositoriesCount;
@@ -78,7 +78,7 @@ export function AppShell({ children, labels, locale, githubSource, trackedReposi
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-3">
             <div className="text-sm font-medium">{labels.common.admin}</div>
-            <div className="text-xs text-slate-500">admin@example.com</div>
+            <div className="text-xs text-slate-500">{adminEmail}</div>
           </div>
         </div>
       </aside>

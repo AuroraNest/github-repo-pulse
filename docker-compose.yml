@@ -1,8 +1,8 @@
 x-repopulse-env: &repopulse-env
   APP_URL: ${APP_URL:-http://localhost:3000}
   SESSION_SECRET: ${SESSION_SECRET:-replace-with-a-local-random-string}
-  ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
-  ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-locally}
+  ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@local.com}
+  ADMIN_PASSWORD: ${ADMIN_PASSWORD:-123456}
   GITHUB_TOKEN: ${GITHUB_TOKEN:-}
   GITHUB_API_BASE_URL: ${GITHUB_API_BASE_URL:-https://api.github.com}
   MOCK_GITHUB: ${MOCK_GITHUB:-false}

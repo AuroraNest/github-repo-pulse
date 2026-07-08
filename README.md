@@ -60,6 +60,11 @@ The compose stack starts:
 - `worker`: RepoPulse worker process
 - `mysql`: local MySQL database with the `mysql_data` Docker volume
 
+Default login:
+
+- Email: `admin@local.com`
+- Password: `123456`
+
 Before real use, replace `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `SESSION_SECRET`, `ADMIN_PASSWORD`, and `GITHUB_TOKEN` in `.env`. Keep production secrets outside git.
 
 ### Private registry publish
@@ -135,6 +140,11 @@ Compose stack 会启动:
 - `web`: Next.js 看板, 访问 `http://localhost:3000`
 - `worker`: RepoPulse worker 进程
 - `mysql`: 本地 MySQL 数据库, 数据存放在 `mysql_data` Docker volume
+
+默认登录:
+
+- Email: `admin@local.com`
+- Password: `123456`
 
 真实使用前, 请替换 `.env` 里的 `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `SESSION_SECRET`, `ADMIN_PASSWORD`, `GITHUB_TOKEN`.生产 secret 不要写进 git.
 

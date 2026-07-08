@@ -20,15 +20,15 @@ type ApiResponse<T> =
 
 ```json
 {
-  "email": "admin@example.com",
-  "password": "password"
+  "email": "admin@local.com",
+  "password": "123456"
 }
 ```
 
 返回：
 
 ```json
-{ "ok": true, "data": { "user": { "email": "admin@example.com" } } }
+{ "ok": true, "data": { "user": { "email": "admin@local.com" } } }
 ```
 
 ### POST /api/auth/logout

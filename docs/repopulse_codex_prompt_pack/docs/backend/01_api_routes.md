@@ -131,7 +131,7 @@ POST /api/ai/generate-report-summary
 MVP 单用户自托管，可以先用：
 
 - Setup 后设置一个 admin password；或
-- 环境变量 `ADMIN_PASSWORD_HASH`；或
+- 环境变量 `ADMIN_PASSWORD`；或
 - 本地网络默认不强制登录，但文档强烈建议反向代理保护。
 
 推荐第一版实现简单 session：
