@@ -1,7 +1,7 @@
 import { Download, ExternalLink, GitFork, Star, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Card, Chip, EmptyState } from "../../../components/ui";
-import { getReleaseData, getRepositoryData, isGitHubConfigurationRequired } from "../../../lib/data-source";
+import { getReleaseData, getRepositoryData, getRepositoryReleaseAssets, isGitHubConfigurationRequired } from "../../../lib/data-source";
 import { formatCompactNumber } from "../../../lib/format";
 import { translateVisibility, type Locale } from "../../../lib/i18n";
 import { getDictionary } from "../../../lib/locale";
@@ -18,8 +18,8 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
   const { locale, t } = await getDictionary();
   const { id } = await params;
   const { source, repository: repo } = await getRepositoryData(id);
-  const releaseData = await getReleaseData();
-  const assets = repo ? releaseData.assets.filter((asset) => asset.repositoryId === repo.id) : [];
+  const releaseData = source.demo ? await getReleaseData() : undefined;
+  const assets = repo ? source.demo ? releaseData?.assets.filter((asset) => asset.repositoryId === repo.id) || [] : await getRepositoryReleaseAssets(repo) : [];
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
 
   if (!repo) {
@@ -80,7 +80,7 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
 
       <RepositoryDetailTabs
         assets={assets}
-        growthTrends={source.demo ? releaseData.overview.growthTrends : []}
+        growthTrends={source.demo ? releaseData?.overview.growthTrends || [] : []}
         labels={{
           clones: t.common.clones,
           downloads: t.common.downloads,
@@ -104,7 +104,7 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
         locale={locale}
         repo={repo}
         sourceDescription={sourceDescription}
-        trafficTrends={source.demo ? releaseData.overview.viewsVsClones : []}
+        trafficTrends={source.demo ? releaseData?.overview.viewsVsClones || [] : []}
         useDemoContent={source.demo}
       />
     </div>

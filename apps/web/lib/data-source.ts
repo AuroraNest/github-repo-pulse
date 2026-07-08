@@ -129,6 +129,20 @@ export async function getRepositoryData(id: string): Promise<{ source: GitHubDat
   return { source, repositories, repository: findRepository(repositories, id) };
 }
 
+export async function getRepositoryReleaseAssets(repository: RepositorySummary): Promise<ReleaseAssetSummary[]> {
+  const { config, source } = await readRuntimeSource();
+  if (source.demo) {
+    return mockReleaseAssets.filter((asset) => asset.repositoryId === repository.id);
+  }
+  if (source.mode !== "live") return [];
+
+  return listReleaseAssetsForRepositories([repository], {
+    token: config.githubToken,
+    baseUrl: config.githubApiBaseUrl,
+    mock: false
+  }).catch(() => []);
+}
+
 export async function getReleaseData(): Promise<{ source: GitHubDataSource; assets: ReleaseAssetSummary[]; overview: OverviewData }> {
   const { config, source } = await readRuntimeSource();
   if (source.demo) {
