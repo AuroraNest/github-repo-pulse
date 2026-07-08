@@ -278,13 +278,21 @@ async function enrichRepositoriesWithLiveMetrics(repositories: RepositorySummary
     listRepositoriesWithTrafficCounts(repositories, githubOptions).catch(() => ({ repositories, trends: [] })),
     listReleaseAssetsForRepositories(repositories, githubOptions).catch(() => [])
   ]);
-  const downloadsByRepository = new Map<string, number>();
+  const releaseByRepository = new Map<string, { totalDownloads: number; latestRelease?: string; publishedAt: string }>();
   for (const asset of assets) {
-    downloadsByRepository.set(asset.repositoryId, (downloadsByRepository.get(asset.repositoryId) || 0) + asset.totalDownloads);
+    const current = releaseByRepository.get(asset.repositoryId);
+    const totalDownloads = (current?.totalDownloads || 0) + asset.totalDownloads;
+    const isLatest = !current || asset.publishedAt.localeCompare(current.publishedAt) > 0;
+    releaseByRepository.set(asset.repositoryId, {
+      totalDownloads,
+      latestRelease: isLatest ? asset.tagName : current?.latestRelease,
+      publishedAt: isLatest ? asset.publishedAt : current?.publishedAt || ""
+    });
   }
   return traffic.repositories.map((repository) => ({
     ...repository,
-    totalDownloads: downloadsByRepository.get(repository.id) || repository.totalDownloads
+    latestRelease: releaseByRepository.get(repository.id)?.latestRelease || repository.latestRelease,
+    totalDownloads: releaseByRepository.get(repository.id)?.totalDownloads || repository.totalDownloads
   }));
 }
 
