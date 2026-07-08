@@ -1,6 +1,6 @@
 import { readRuntimeConfig } from "@repopulse/core";
 import { defaultAppSettings, readAppSettings } from "@repopulse/db";
-import { Bot, Database, Github, ShieldAlert, Timer, Webhook, type LucideIcon } from "lucide-react";
+import { Bot, Database, Download, Github, Timer, Webhook, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, Chip, SectionTitle } from "../../components/ui";
 import { getGitHubDataSource } from "../../lib/data-source";
@@ -13,7 +13,6 @@ export default async function SettingsPage() {
   const githubSource = await getGitHubDataSource();
   const settings = await readAppSettings().catch(() => defaultAppSettings());
   const actionLabels = {
-    deleteAllData: t.settings.deleteAllData,
     exportCsv: t.settings.exportCsv,
     reverifyToken: t.settings.reverifyToken,
     rotateToken: t.settings.rotateToken
@@ -75,7 +74,7 @@ export default async function SettingsPage() {
           </div>
         </SettingsCard>
 
-        <SettingsCard icon={ShieldAlert} title={t.settings.privacyTitle} subtitle={t.settings.privacySubtitle}>
+        <SettingsCard icon={Download} title={t.settings.privacyTitle} subtitle={t.settings.privacySubtitle}>
           <SettingsActions kind="privacy" labels={actionLabels} locale={locale} />
         </SettingsCard>
       </div>

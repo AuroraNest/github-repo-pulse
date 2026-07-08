@@ -7,7 +7,6 @@ import type { Locale } from "../../lib/i18n";
 type SettingsActionsProps = {
   kind: "github" | "privacy";
   labels: {
-    deleteAllData: string;
     exportCsv: string;
     reverifyToken: string;
     rotateToken: string;
@@ -100,12 +99,10 @@ export function SettingsActions({ kind, labels, locale }: SettingsActionsProps) 
   const router = useRouter();
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [deleteArmed, setDeleteArmed] = useState(false);
   const copy = locale === "zh" ? zhCopy : enCopy;
 
   async function run(action: string, request: () => Promise<Response>) {
     setBusy(action);
-    setDeleteArmed(false);
     setFeedback(null);
 
     try {
@@ -116,7 +113,7 @@ export function SettingsActions({ kind, labels, locale }: SettingsActionsProps) 
         return;
       }
 
-      setFeedback({ tone: "green", message: action === "delete" ? copy.deleteGuarded : copy.done });
+      setFeedback({ tone: "green", message: copy.done });
     } catch (error) {
       setFeedback({ tone: "red", message: error instanceof Error ? error.message : copy.failed });
     } finally {
@@ -126,7 +123,6 @@ export function SettingsActions({ kind, labels, locale }: SettingsActionsProps) 
 
   async function exportCsv() {
     setBusy("export");
-    setDeleteArmed(false);
     setFeedback(null);
 
     try {
@@ -175,21 +171,6 @@ export function SettingsActions({ kind, labels, locale }: SettingsActionsProps) 
       <div className="flex flex-wrap gap-2">
         <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium disabled:opacity-60" disabled={busy !== null} onClick={exportCsv} type="button">
           {busy === "export" ? copy.working : labels.exportCsv}
-        </button>
-        <button
-          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 disabled:opacity-60"
-          disabled={busy !== null}
-          onClick={() => {
-            if (!deleteArmed) {
-              setDeleteArmed(true);
-              setFeedback({ tone: "slate", message: copy.deleteConfirm });
-              return;
-            }
-            void run("delete", () => fetch("/api/settings/data", { body: JSON.stringify({ confirmation: "DELETE" }), headers: { "Content-Type": "application/json" }, method: "DELETE" }));
-          }}
-          type="button"
-        >
-          {busy === "delete" ? copy.working : deleteArmed ? copy.confirmDelete : labels.deleteAllData}
         </button>
       </div>
       {feedback ? <FeedbackMessage feedback={feedback} /> : null}
@@ -254,9 +235,6 @@ function timeToCron(time: string) {
 const zhCopy = {
   aiConfigured: "AI 配置可用.",
   aiFallback: "AI 已关闭, 当前使用规则生成报告.",
-  confirmDelete: "确认删除",
-  deleteConfirm: "再次点击确认删除. 当前版本仍会被后端保护, 不会实际删除数据.",
-  deleteGuarded: "删除接口已受保护, 当前版本不会执行实际删除.",
   done: "操作已完成.",
   exported: "CSV 已准备下载.",
   failed: "操作失败.",
@@ -270,9 +248,6 @@ const zhCopy = {
 const enCopy = {
   aiConfigured: "AI configuration is available.",
   aiFallback: "AI is disabled; reports use rule-based summaries.",
-  confirmDelete: "Confirm delete",
-  deleteConfirm: "Click again to confirm deletion. The backend still guards this version and will not delete data.",
-  deleteGuarded: "Deletion is guarded; this version does not delete data.",
   done: "Action completed.",
   exported: "CSV is ready to download.",
   failed: "Action failed.",

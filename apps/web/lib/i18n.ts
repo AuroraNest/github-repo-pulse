@@ -278,10 +278,9 @@ export const dictionary = {
       notificationsSubtitle: "In-app notifications are ready; webhook delivery is a later integration.",
       inAppEnabled: "In-app enabled",
       webhookNotConfigured: "Webhook not configured",
-      privacyTitle: "Privacy & Data Controls",
-      privacySubtitle: "Dangerous actions require explicit confirmation.",
-      exportCsv: "Export analytics CSV",
-      deleteAllData: "Delete all data"
+      privacyTitle: "Data Export",
+      privacySubtitle: "Download a CSV snapshot of the current repository analytics.",
+      exportCsv: "Export analytics CSV"
     },
     api: {
       loginRequired: "Login required.",
@@ -534,10 +533,9 @@ export const dictionary = {
       notificationsSubtitle: "站内通知已就绪, webhook 投递属于后续集成.",
       inAppEnabled: "站内通知启用",
       webhookNotConfigured: "Webhook 未配置",
-      privacyTitle: "隐私与数据控制",
-      privacySubtitle: "危险操作需要明确确认.",
-      exportCsv: "导出分析 CSV",
-      deleteAllData: "删除全部数据"
+      privacyTitle: "数据导出",
+      privacySubtitle: "下载当前仓库分析数据的 CSV 快照.",
+      exportCsv: "导出分析 CSV"
     },
     api: {
       loginRequired: "需要登录.",
