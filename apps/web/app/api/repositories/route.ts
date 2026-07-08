@@ -4,7 +4,7 @@ import { getRepositoryCollection, githubDataSourcePayload } from "../../../lib/d
 
 export async function GET(request: NextRequest) {
   const params = parseSearchParams(request);
-  const { source, repositories: allRepositories } = await getRepositoryCollection();
+  const { source, repositories: allRepositories } = await getRepositoryCollection({ includeMetrics: true });
   const search = (params.get("search") || "").toLowerCase();
   const visibility = params.get("visibility") || "all";
   const tracked = params.get("tracked");

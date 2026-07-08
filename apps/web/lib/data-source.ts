@@ -37,11 +37,15 @@ type RuntimeSource = {
   source: GitHubDataSource;
 };
 
+type RepositoryCollectionOptions = {
+  includeMetrics?: boolean;
+};
+
 export async function getGitHubDataSource(): Promise<GitHubDataSource> {
   return (await readRuntimeSource()).source;
 }
 
-export async function getRepositoryCollection(): Promise<{ source: GitHubDataSource; repositories: RepositorySummary[] }> {
+export async function getRepositoryCollection(options: RepositoryCollectionOptions = {}): Promise<{ source: GitHubDataSource; repositories: RepositorySummary[] }> {
   const { config, source } = await readRuntimeSource();
 
   if (source.mode === "configuration_required") {
@@ -55,7 +59,12 @@ export async function getRepositoryCollection(): Promise<{ source: GitHubDataSou
       mock: source.demo
     });
 
-    return { source, repositories: applyRuntimeSetupState(repositories, await getSetupState()) };
+    const setupRepositories = applyRuntimeSetupState(repositories, await getSetupState());
+    if (!options.includeMetrics || source.demo) {
+      return { source, repositories: setupRepositories };
+    }
+
+    return { source, repositories: await enrichRepositoriesWithLiveMetrics(setupRepositories, config) };
   } catch (error) {
     if (isRecoverableGitHubError(error)) {
       return {
@@ -116,7 +125,7 @@ export async function getReportGenerationData(): Promise<{ source: GitHubDataSou
 }
 
 export async function getRepositoryData(id: string): Promise<{ source: GitHubDataSource; repository?: RepositorySummary; repositories: RepositorySummary[] }> {
-  const { source, repositories } = await getRepositoryCollection();
+  const { source, repositories } = await getRepositoryCollection({ includeMetrics: true });
   return { source, repositories, repository: findRepository(repositories, id) };
 }
 
@@ -257,6 +266,26 @@ function buildSyncActivity(runs: Awaited<ReturnType<typeof readSyncRuns>>): Acti
 function getTrackedRepositories(repositories: RepositorySummary[]) {
   const trackedRepositories = repositories.filter((repo) => repo.tracked);
   return trackedRepositories.length > 0 ? trackedRepositories : repositories;
+}
+
+async function enrichRepositoriesWithLiveMetrics(repositories: RepositorySummary[], config: RuntimeConfig) {
+  const githubOptions = {
+    token: config.githubToken,
+    baseUrl: config.githubApiBaseUrl,
+    mock: false
+  };
+  const [traffic, assets] = await Promise.all([
+    listRepositoriesWithTrafficCounts(repositories, githubOptions).catch(() => ({ repositories, trends: [] })),
+    listReleaseAssetsForRepositories(repositories, githubOptions).catch(() => [])
+  ]);
+  const downloadsByRepository = new Map<string, number>();
+  for (const asset of assets) {
+    downloadsByRepository.set(asset.repositoryId, (downloadsByRepository.get(asset.repositoryId) || 0) + asset.totalDownloads);
+  }
+  return traffic.repositories.map((repository) => ({
+    ...repository,
+    totalDownloads: downloadsByRepository.get(repository.id) || repository.totalDownloads
+  }));
 }
 
 function isRecoverableGitHubError(error: unknown) {

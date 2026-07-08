@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   const session = requireSession(request);
   if (!session.ok) return session.response;
 
-  const { repositories, source } = await getRepositoryCollection();
+  const { repositories, source } = await getRepositoryCollection({ includeMetrics: true });
   const rows = repositories.map((repo) => ({
     repository: repo.fullName,
     tracked: repo.tracked,
