@@ -1,4 +1,6 @@
+import type { ReportData } from "@repopulse/core";
 import { getReportData, isGitHubConfigurationRequired } from "../../lib/data-source";
+import type { Locale } from "../../lib/i18n";
 import { getDictionary } from "../../lib/locale";
 import { ReportsView } from "./reports-view";
 
@@ -7,11 +9,12 @@ export const dynamic = "force-dynamic";
 export default async function ReportsPage() {
   const { locale, t } = await getDictionary();
   const { source, reports } = await getReportData();
-  const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
+  const localeReports = reports.filter((report) => isReportLocale(report, locale));
+  const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : t.reports.description;
 
   return (
     <ReportsView
-      initialReports={reports}
+      initialReports={localeReports}
       labels={{
         actions: {
           daily: t.common.daily,
@@ -37,4 +40,9 @@ export default async function ReportsPage() {
       locale={locale}
     />
   );
+}
+
+function isReportLocale(report: ReportData, locale: Locale) {
+  const isChineseReport = report.id.endsWith("-zh") || report.title.includes("日报");
+  return locale === "zh" ? isChineseReport : !isChineseReport;
 }
