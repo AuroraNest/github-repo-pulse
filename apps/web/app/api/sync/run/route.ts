@@ -1,4 +1,4 @@
-import { syncRepositorySkeleton } from "@repopulse/core";
+import { readRuntimeConfig, syncRepositorySkeleton } from "@repopulse/core";
 import { saveSyncRun } from "@repopulse/db";
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -47,28 +47,30 @@ export async function POST(request: NextRequest) {
     ? "failed"
     : items.some((item) => item.status !== "success") ? "partial_failed" : "success";
   const finishedAt = new Date().toISOString();
-  await saveSyncRun({
-    id: runId,
-    trigger: "api",
-    status,
-    startedAt,
-    finishedAt,
-    totalRepositories: repositories.length,
-    successCount: items.filter((item) => item.status === "success").length,
-    failedCount: items.filter((item) => item.status !== "success").length,
-    items: items.map((item) => ({
-      id: item.id,
-      repositoryId: item.repositoryId,
-      status: item.status,
-      startedAt: item.startedAt,
-      finishedAt: item.finishedAt,
-      collectedRepo: item.collectedRepo,
-      collectedTraffic: item.collectedTraffic,
-      collectedReleases: item.collectedReleases,
-      errorCode: item.errorCode,
-      errorMessage: item.errorMessage
-    }))
-  });
+  if (readRuntimeConfig().databaseUrl) {
+    await saveSyncRun({
+      id: runId,
+      trigger: "api",
+      status,
+      startedAt,
+      finishedAt,
+      totalRepositories: repositories.length,
+      successCount: items.filter((item) => item.status === "success").length,
+      failedCount: items.filter((item) => item.status !== "success").length,
+      items: items.map((item) => ({
+        id: item.id,
+        repositoryId: item.repositoryId,
+        status: item.status,
+        startedAt: item.startedAt,
+        finishedAt: item.finishedAt,
+        collectedRepo: item.collectedRepo,
+        collectedTraffic: item.collectedTraffic,
+        collectedReleases: item.collectedReleases,
+        errorCode: item.errorCode,
+        errorMessage: item.errorMessage
+      }))
+    });
+  }
 
   return jsonOk({
     syncRun: {

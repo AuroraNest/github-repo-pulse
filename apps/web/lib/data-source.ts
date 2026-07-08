@@ -233,7 +233,8 @@ function buildSyncActivity(runs: Awaited<ReturnType<typeof readSyncRuns>>): Acti
 }
 
 function getTrackedRepositories(repositories: RepositorySummary[]) {
-  return repositories.filter((repo) => repo.tracked);
+  const trackedRepositories = repositories.filter((repo) => repo.tracked);
+  return trackedRepositories.length > 0 ? trackedRepositories : repositories;
 }
 
 function isRecoverableGitHubError(error: unknown) {

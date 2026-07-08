@@ -1,4 +1,4 @@
-import { syncRepositorySkeleton } from "@repopulse/core";
+import { readRuntimeConfig, syncRepositorySkeleton } from "@repopulse/core";
 import { saveSyncRun } from "@repopulse/db";
 import { NextRequest } from "next/server";
 import { jsonError, jsonOk } from "../../../../../lib/api";
@@ -34,28 +34,30 @@ export async function POST(request: NextRequest, context: RouteContext) {
     mock: config.mockGitHub
   });
   const finishedAt = new Date().toISOString();
-  await saveSyncRun({
-    id: runId,
-    trigger: "api",
-    status: result.status,
-    startedAt,
-    finishedAt,
-    totalRepositories: 1,
-    successCount: result.status === "success" ? 1 : 0,
-    failedCount: result.status === "success" ? 0 : 1,
-    items: [{
-      id: `${runId}-0`,
-      repositoryId: result.repositoryId,
+  if (readRuntimeConfig().databaseUrl) {
+    await saveSyncRun({
+      id: runId,
+      trigger: "api",
       status: result.status,
-      startedAt: itemStartedAt,
+      startedAt,
       finishedAt,
-      collectedRepo: result.collectedRepo,
-      collectedTraffic: result.collectedTraffic,
-      collectedReleases: result.collectedReleases,
-      errorCode: result.errorCode,
-      errorMessage: result.errorMessage
-    }]
-  });
+      totalRepositories: 1,
+      successCount: result.status === "success" ? 1 : 0,
+      failedCount: result.status === "success" ? 0 : 1,
+      items: [{
+        id: `${runId}-0`,
+        repositoryId: result.repositoryId,
+        status: result.status,
+        startedAt: itemStartedAt,
+        finishedAt,
+        collectedRepo: result.collectedRepo,
+        collectedTraffic: result.collectedTraffic,
+        collectedReleases: result.collectedReleases,
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage
+      }]
+    });
+  }
 
   return jsonOk({ syncRunItem: result });
 }
