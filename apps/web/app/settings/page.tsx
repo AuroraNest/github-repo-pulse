@@ -1,6 +1,6 @@
 import { readRuntimeConfig } from "@repopulse/core";
 import { defaultAppSettings, readAppSettings } from "@repopulse/db";
-import { Bot, Database, Download, Github, Timer, Webhook, type LucideIcon } from "lucide-react";
+import { Bell, Bot, Database, Download, Github, Timer, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Card, Chip, SectionTitle } from "../../components/ui";
 import { getGitHubDataSource } from "../../lib/data-source";
@@ -67,10 +67,9 @@ export default async function SettingsPage() {
           <SettingsAiActions locale={locale} />
         </SettingsCard>
 
-        <SettingsCard icon={Webhook} title={t.settings.notificationsTitle} subtitle={t.settings.notificationsSubtitle}>
+        <SettingsCard icon={Bell} title={t.settings.notificationsTitle} subtitle={t.settings.notificationsSubtitle}>
           <div className="flex flex-wrap gap-2">
             <Chip tone="green">{t.settings.inAppEnabled}</Chip>
-            <Chip>{t.settings.webhookNotConfigured}</Chip>
           </div>
         </SettingsCard>
 
