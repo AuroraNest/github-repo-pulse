@@ -5,7 +5,7 @@ import { BarChart3, Eye, GitFork, Github, PauseCircle, PlayCircle, RefreshCw, St
 import Link from "next/link";
 import { type ReactNode, useMemo, useState } from "react";
 import { Card, Chip, EmptyState } from "../../components/ui";
-import { formatCompactNumber, formatDate } from "../../lib/format";
+import { formatCompactNumber, formatDate, formatSyncState } from "../../lib/format";
 import { translateStatus, translateVisibility, type Locale } from "../../lib/i18n";
 
 type TabKey = "all" | "active" | "private" | "public" | "favorites";
@@ -207,7 +207,7 @@ export function RepositoriesClient({
                 <td className="px-3 py-4"><Metric icon={Eye} value={repo.visitors14d} locale={locale} /></td>
                 <td className="px-3 py-4">{formatCompactNumber(repo.clones14d, locale)}</td>
                 <td className="px-3 py-4">{formatCompactNumber(repo.totalDownloads, locale)}</td>
-                <td className="px-3 py-4">{repo.latestRelease}</td>
+                <td className="px-3 py-4">{formatSyncState(repo.latestRelease, locale)}</td>
                 <td className="px-3 py-4">{formatDate(repo.lastSyncAt, locale)}</td>
                 <td className="px-3 py-4"><TableBadge tone={repo.status === "warning" ? "yellow" : repo.status === "error" ? "red" : "green"}>{translateStatus(repo.status, locale)}</TableBadge></td>
                 <td className="px-3 py-4 align-middle">

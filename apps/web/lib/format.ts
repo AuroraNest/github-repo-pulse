@@ -19,3 +19,7 @@ export function formatDate(value: string, locale: Locale = "en") {
     minute: "2-digit"
   }).format(new Date(value));
 }
+
+export function formatSyncState(value: string, locale: Locale = "en") {
+  return value === "Not synced" && locale === "zh" ? "未同步" : value;
+}
