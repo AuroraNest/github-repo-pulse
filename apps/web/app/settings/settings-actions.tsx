@@ -197,6 +197,41 @@ export function SettingsActions({ kind, labels, locale }: SettingsActionsProps) 
   );
 }
 
+export function SettingsAiActions({ locale }: { locale: Locale }) {
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [busy, setBusy] = useState(false);
+  const copy = locale === "zh" ? zhCopy : enCopy;
+
+  async function testConnection() {
+    setBusy(true);
+    setFeedback(null);
+
+    try {
+      const response = await fetch("/api/settings/ai/test", { method: "POST" });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) {
+        setFeedback({ tone: "red", message: payload?.error?.message || copy.failed });
+        return;
+      }
+
+      setFeedback({ tone: "green", message: payload.data?.mode === "configured" ? copy.aiConfigured : copy.aiFallback });
+    } catch (error) {
+      setFeedback({ tone: "red", message: error instanceof Error ? error.message : copy.failed });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4">
+      <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium disabled:opacity-60" disabled={busy} onClick={testConnection} type="button">
+        {busy ? copy.working : copy.testAi}
+      </button>
+      {feedback ? <FeedbackMessage feedback={feedback} /> : null}
+    </div>
+  );
+}
+
 function FeedbackMessage({ feedback }: { feedback: Feedback }) {
   const tone = feedback.tone === "green" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : feedback.tone === "red" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-slate-200 bg-slate-50 text-slate-700";
   return <div className={`mt-3 rounded-lg border px-3 py-2 text-sm ${tone}`}>{feedback.message}</div>;
@@ -217,6 +252,8 @@ function timeToCron(time: string) {
 }
 
 const zhCopy = {
+  aiConfigured: "AI 配置可用.",
+  aiFallback: "AI 已关闭, 当前使用规则生成报告.",
   confirmDelete: "确认删除",
   deleteConfirm: "再次点击确认删除. 当前版本仍会被后端保护, 不会实际删除数据.",
   deleteGuarded: "删除接口已受保护, 当前版本不会执行实际删除.",
@@ -226,10 +263,13 @@ const zhCopy = {
   invalidTime: "运行时间格式应为 HH:MM.",
   saved: "同步计划已保存.",
   saveSync: "保存同步计划",
+  testAi: "测试 AI 连接",
   working: "处理中..."
 };
 
 const enCopy = {
+  aiConfigured: "AI configuration is available.",
+  aiFallback: "AI is disabled; reports use rule-based summaries.",
   confirmDelete: "Confirm delete",
   deleteConfirm: "Click again to confirm deletion. The backend still guards this version and will not delete data.",
   deleteGuarded: "Deletion is guarded; this version does not delete data.",
@@ -239,5 +279,6 @@ const enCopy = {
   invalidTime: "Use HH:MM for run time.",
   saved: "Sync schedule saved.",
   saveSync: "Save sync schedule",
+  testAi: "Test AI connection",
   working: "Working..."
 };

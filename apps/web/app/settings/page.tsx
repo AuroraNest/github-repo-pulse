@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Card, Chip, SectionTitle } from "../../components/ui";
 import { getGitHubDataSource } from "../../lib/data-source";
 import { getDictionary } from "../../lib/locale";
-import { SettingsActions, SettingsSyncForm } from "./settings-actions";
+import { SettingsActions, SettingsAiActions, SettingsSyncForm } from "./settings-actions";
 
 export default async function SettingsPage() {
   const { locale, t } = await getDictionary();
@@ -65,6 +65,7 @@ export default async function SettingsPage() {
             <Field label={t.settings.model} value={t.settings.modelValue} />
           </div>
           <p className="mt-3 text-sm text-slate-500">{t.settings.aiPrivacy}</p>
+          <SettingsAiActions locale={locale} />
         </SettingsCard>
 
         <SettingsCard icon={Webhook} title={t.settings.notificationsTitle} subtitle={t.settings.notificationsSubtitle}>
