@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { mockRepositories } from "../mock-data";
-import type { ReleaseAssetSummary, RepositorySummary } from "../types";
+import type { ReleaseAssetSummary, RepositorySummary, TrendPoint } from "../types";
 
 export type GitHubClientOptions = {
   token?: string;
@@ -120,8 +120,8 @@ export async function listAccessibleRepositories(options: GitHubClientOptions): 
   }));
 }
 
-export async function listRepositoriesWithTrafficCounts(repositories: RepositorySummary[], options: GitHubClientOptions): Promise<RepositorySummary[]> {
-  if (options.mock) return repositories;
+export async function listRepositoriesWithTrafficCounts(repositories: RepositorySummary[], options: GitHubClientOptions): Promise<{ repositories: RepositorySummary[]; trends: TrendPoint[] }> {
+  if (options.mock) return { repositories, trends: [] };
 
   const client = createGitHubClient(options);
   if (!client) {
@@ -129,6 +129,7 @@ export async function listRepositoriesWithTrafficCounts(repositories: Repository
   }
 
   const enrichedRepositories: RepositorySummary[] = [];
+  const dailyTraffic = new Map<string, { views: number; clones: number }>();
   for (const repository of repositories) {
     const [views, clones] = await Promise.all([
       client.request("GET /repos/{owner}/{repo}/traffic/views", {
@@ -148,9 +149,23 @@ export async function listRepositoriesWithTrafficCounts(repositories: Repository
       visitors14d: views ? readTrafficNumber(views.data, "uniques") : 0,
       clones14d: clones ? readTrafficNumber(clones.data, "count") : 0
     });
+
+    for (const point of readTrafficSeries(views?.data, "views", "uniques")) {
+      const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
+      dailyTraffic.set(point.date, { ...current, views: current.views + point.value });
+    }
+    for (const point of readTrafficSeries(clones?.data, "clones", "count")) {
+      const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
+      dailyTraffic.set(point.date, { ...current, clones: current.clones + point.value });
+    }
   }
 
-  return enrichedRepositories;
+  return {
+    repositories: enrichedRepositories,
+    trends: Array.from(dailyTraffic.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, value]) => ({ date, stars: 0, forks: 0, downloads: 0, views: value.views, clones: value.clones }))
+  };
 }
 
 export async function syncRepositorySkeleton(repository: RepositorySummary, options: GitHubClientOptions): Promise<RepositorySyncResult> {
@@ -290,6 +305,19 @@ function readTrafficNumber(data: unknown, preferredKey: "count" | "uniques") {
   if (typeof preferredValue === "number") return preferredValue;
   const fallbackValue = preferredKey === "count" ? summary.uniques : summary.count;
   return typeof fallbackValue === "number" ? fallbackValue : 0;
+}
+
+function readTrafficSeries(data: unknown, seriesKey: "views" | "clones", preferredKey: "count" | "uniques") {
+  if (!data || typeof data !== "object") return [];
+  const series = (data as { views?: unknown; clones?: unknown })[seriesKey];
+  if (!Array.isArray(series)) return [];
+
+  return series.flatMap((point) => {
+    if (!point || typeof point !== "object") return [];
+    const item = point as { timestamp?: unknown; count?: unknown; uniques?: unknown };
+    if (typeof item.timestamp !== "string") return [];
+    return [{ date: item.timestamp.slice(0, 10), value: readTrafficNumber(item, preferredKey) }];
+  });
 }
 
 function formatBytes(bytes: number) {

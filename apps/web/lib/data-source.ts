@@ -91,16 +91,19 @@ export async function getOverviewData(): Promise<{ source: GitHubDataSource; ove
     baseUrl: config.githubApiBaseUrl,
     mock: false
   };
-  const [trafficRepositories, assets] = await Promise.all([
-    listRepositoriesWithTrafficCounts(trackedRepositories, githubOptions).catch(() => trackedRepositories.map((repository) => ({
-      ...repository,
-      visitors14d: 0,
-      clones14d: 0
-    }))),
+  const [traffic, assets] = await Promise.all([
+    listRepositoriesWithTrafficCounts(trackedRepositories, githubOptions).catch(() => ({
+      repositories: trackedRepositories.map((repository) => ({
+        ...repository,
+        visitors14d: 0,
+        clones14d: 0
+      })),
+      trends: []
+    })),
     listReleaseAssetsForRepositories(trackedRepositories, githubOptions).catch(() => [])
   ]);
 
-  return { source, overview: buildOverview(trafficRepositories, assets, buildSyncActivity(runs)) };
+  return { source, overview: buildOverview(traffic.repositories, assets, buildSyncActivity(runs), [], traffic.trends) };
 }
 
 export async function getReportGenerationData(): Promise<{ source: GitHubDataSource; overview: OverviewData; repositories: RepositorySummary[]; assets: ReleaseAssetSummary[] }> {
@@ -213,9 +216,7 @@ async function readRuntimeSource(): Promise<RuntimeSource> {
   };
 }
 
-function buildOverview(repositories: RepositorySummary[], assets: ReleaseAssetSummary[], activityFeed: ActivityEvent[] = []): OverviewData {
-  const emptyTrend: TrendPoint[] = [];
-
+function buildOverview(repositories: RepositorySummary[], assets: ReleaseAssetSummary[], activityFeed: ActivityEvent[] = [], growthTrends: TrendPoint[] = [], viewsVsClones: TrendPoint[] = []): OverviewData {
   return {
     kpis: {
       totalStars: repositories.reduce((sum, repo) => sum + repo.stars, 0),
@@ -226,8 +227,8 @@ function buildOverview(repositories: RepositorySummary[], assets: ReleaseAssetSu
       clones14d: repositories.reduce((sum, repo) => sum + repo.clones14d, 0),
       trackedRepositories: repositories.filter((repo) => repo.tracked).length
     },
-    growthTrends: emptyTrend,
-    viewsVsClones: emptyTrend,
+    growthTrends,
+    viewsVsClones,
     fastestGrowingRepositories: repositories
       .slice()
       .sort((a, b) => b.stars - a.stars)

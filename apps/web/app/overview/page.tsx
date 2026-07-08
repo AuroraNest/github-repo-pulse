@@ -74,7 +74,7 @@ export default async function OverviewPage() {
           {overview.growthTrends.length > 0 ? (
             <GrowthChart data={overview.growthTrends} labels={{ stars: t.common.stars, forks: t.common.forks, downloads: t.common.downloads }} />
           ) : (
-            <EmptyState title={t.common.noDataYet} description={sourceDescription} />
+            <EmptyState title={t.common.noDataYet} description={source.demo ? sourceDescription : t.overview.historyRequiredDescription} />
           )}
         </Card>
         <Card>
