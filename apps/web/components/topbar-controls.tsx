@@ -24,9 +24,8 @@ export function TopbarControls({ labels, status }: TopbarControlsProps) {
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const params = new URLSearchParams();
-    if (query.trim()) params.set("search", query.trim());
-    router.push(`/repositories${params.size ? `?${params.toString()}` : ""}`);
+    const value = String(new FormData(event.currentTarget).get("search") || "").trim();
+    router.push(value ? `/repositories?search=${encodeURIComponent(value)}` : "/repositories");
   }
 
   function refreshData() {
@@ -37,13 +36,14 @@ export function TopbarControls({ labels, status }: TopbarControlsProps) {
 
   return (
     <div className="relative flex flex-wrap items-center gap-2">
-      <form className="flex h-10 min-w-64 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-500" onSubmit={submitSearch}>
-        <button className="text-slate-500" type="submit" aria-label={labels.searchRepositories}>
+      <form action="/repositories" className="flex h-10 min-w-64 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-500" method="get" onSubmit={submitSearch}>
+        <button className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100" type="submit" aria-label={labels.searchRepositories}>
           <Search size={16} />
         </button>
         <input
           aria-label={labels.searchRepositories}
           className="min-w-0 flex-1 bg-transparent text-slate-700 outline-none placeholder:text-slate-500"
+          name="search"
           onChange={(event) => setQuery(event.target.value)}
           placeholder={labels.searchRepositories}
           type="search"
