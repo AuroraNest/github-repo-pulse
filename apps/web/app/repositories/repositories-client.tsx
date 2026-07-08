@@ -3,7 +3,7 @@
 import type { ApiResponse, RepositorySummary, RepositorySyncResult } from "@repopulse/core";
 import { BarChart3, Eye, GitFork, Github, PauseCircle, PlayCircle, RefreshCw, Star, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Card, Chip, EmptyState } from "../../components/ui";
 import { formatCompactNumber, formatDate } from "../../lib/format";
 import { translateStatus, translateVisibility, type Locale } from "../../lib/i18n";
@@ -200,7 +200,7 @@ export function RepositoriesClient({
                     </div>
                   </Link>
                 </td>
-                <td className="px-3 py-4"><Chip tone={repo.isPrivate ? "purple" : "green"}>{translateVisibility(repo.visibility, locale)}</Chip></td>
+                <td className="px-3 py-4"><TableBadge tone={repo.isPrivate ? "purple" : "green"}>{translateVisibility(repo.visibility, locale)}</TableBadge></td>
                 <td className="px-3 py-4">{repo.primaryLanguage}</td>
                 <td className="px-3 py-4"><Metric icon={Star} value={repo.stars} locale={locale} /></td>
                 <td className="px-3 py-4"><Metric icon={GitFork} value={repo.forks} locale={locale} /></td>
@@ -209,7 +209,7 @@ export function RepositoriesClient({
                 <td className="px-3 py-4">{formatCompactNumber(repo.totalDownloads, locale)}</td>
                 <td className="px-3 py-4">{repo.latestRelease}</td>
                 <td className="px-3 py-4">{formatDate(repo.lastSyncAt, locale)}</td>
-                <td className="px-3 py-4"><Chip tone={repo.status === "warning" ? "yellow" : repo.status === "error" ? "red" : "green"}>{translateStatus(repo.status, locale)}</Chip></td>
+                <td className="px-3 py-4"><TableBadge tone={repo.status === "warning" ? "yellow" : repo.status === "error" ? "red" : "green"}>{translateStatus(repo.status, locale)}</TableBadge></td>
                 <td className="px-3 py-4 align-middle">
                   <div className="flex min-w-[208px] items-center justify-end gap-1.5">
                     <Link aria-label={labels.view} href={`/repositories/${repo.id}`} title={labels.view} className={actionClass("primary")}>
@@ -257,6 +257,17 @@ function Metric({ icon: Icon, value, locale }: { icon: LucideIcon; value: number
       {formatCompactNumber(value, locale)}
     </span>
   );
+}
+
+function TableBadge({ children, tone }: { children: ReactNode; tone: "green" | "yellow" | "purple" | "red" }) {
+  const tones = {
+    green: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    purple: "border-violet-200 bg-violet-50 text-violet-700",
+    red: "border-rose-200 bg-rose-50 text-rose-700",
+    yellow: "border-amber-200 bg-amber-50 text-amber-700"
+  };
+
+  return <span className={`inline-flex h-7 min-w-[54px] shrink-0 items-center justify-center whitespace-nowrap rounded-md border px-2 text-xs font-medium leading-none ${tones[tone]}`}>{children}</span>;
 }
 
 function actionClass(tone: "primary" | "default" = "default") {
