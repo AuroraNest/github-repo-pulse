@@ -116,9 +116,14 @@ export async function getOverviewData(): Promise<{ source: GitHubDataSource; ove
 }
 
 export async function getReportGenerationData(): Promise<{ source: GitHubDataSource; overview: OverviewData; repositories: RepositorySummary[]; assets: ReleaseAssetSummary[] }> {
-  const { source, repositories } = await getRepositoryCollection();
-  const assets = source.demo ? mockReleaseAssets : [];
+  const { config, source } = await readRuntimeSource();
+  const repositories = source.demo ? mockRepositories : (await getRepositoryCollection({ includeMetrics: true })).repositories;
   const trackedRepositories = source.demo ? repositories : getTrackedRepositories(repositories);
+  const assets = source.demo ? mockReleaseAssets : await listReleaseAssetsForRepositories(trackedRepositories, {
+    token: config.githubToken,
+    baseUrl: config.githubApiBaseUrl,
+    mock: false
+  }).catch(() => []);
   const overview = source.demo ? mockOverview : buildOverview(trackedRepositories, assets);
 
   return { source, overview, repositories: trackedRepositories, assets };
