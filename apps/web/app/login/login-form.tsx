@@ -31,7 +31,7 @@ export function LoginForm({ labels }: LoginFormProps) {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok || payload?.ok === false) {
-        setError(payload?.error?.message || labels.failed);
+        setError(labels.failed);
         return;
       }
 
