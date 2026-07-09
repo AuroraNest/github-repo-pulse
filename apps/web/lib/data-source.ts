@@ -1,5 +1,6 @@
 import {
   findRepository,
+  getRepositoryTrafficDetails,
   listAccessibleRepositories,
   listRepositoriesWithTrafficCounts,
   listReleaseAssetsForRepositories,
@@ -160,17 +161,29 @@ export async function getRepositoryReleaseAssets(repository: RepositorySummary):
 }
 
 export async function getRepositoryTrafficTrends(repository: RepositorySummary): Promise<TrendPoint[]> {
-  const { config, source } = await readRuntimeSource();
-  if (source.demo) return mockOverview.viewsVsClones;
-  if (source.mode !== "live") return [];
+  return (await getRepositoryTrafficData(repository)).trends;
+}
 
-  const traffic = await listRepositoriesWithTrafficCounts([repository], {
+export async function getRepositoryTrafficData(repository: RepositorySummary) {
+  const { config, source } = await readRuntimeSource();
+  if (source.demo) {
+    return {
+      trends: mockOverview.viewsVsClones,
+      popularPaths: [
+        { path: "/README.md", title: "README", count: Math.max(1, Math.round(repository.visitors14d / 2)), uniques: Math.max(1, Math.round(repository.visitors14d / 3)) },
+        { path: "/releases", title: "Releases", count: Math.max(1, Math.round(repository.visitors14d / 3)), uniques: Math.max(1, Math.round(repository.visitors14d / 4)) },
+        { path: `/releases/tag/${repository.latestRelease}`, title: repository.latestRelease, count: Math.max(1, Math.round(repository.visitors14d / 4)), uniques: Math.max(1, Math.round(repository.visitors14d / 5)) }
+      ],
+      referrers: []
+    };
+  }
+  if (source.mode !== "live") return { trends: [], popularPaths: [], referrers: [] };
+
+  return getRepositoryTrafficDetails(repository, {
     token: config.githubToken,
     baseUrl: config.githubApiBaseUrl,
     mock: false
-  }).catch(() => ({ trends: [] }));
-
-  return traffic.trends;
+  }).catch(() => ({ trends: [], popularPaths: [], referrers: [] }));
 }
 
 export async function getReleaseData(): Promise<{ source: GitHubDataSource; assets: ReleaseAssetSummary[]; overview: OverviewData }> {

@@ -25,6 +25,25 @@ export type RepositorySyncResult = {
   errorMessage?: string;
 };
 
+export type RepositoryPopularPath = {
+  path: string;
+  title: string;
+  count: number;
+  uniques: number;
+};
+
+export type RepositoryReferrer = {
+  referrer: string;
+  count: number;
+  uniques: number;
+};
+
+export type RepositoryTrafficDetails = {
+  trends: TrendPoint[];
+  popularPaths: RepositoryPopularPath[];
+  referrers: RepositoryReferrer[];
+};
+
 export class GitHubConfigurationRequiredError extends Error {
   code = "GITHUB_CONFIGURATION_REQUIRED" as const;
 
@@ -164,6 +183,54 @@ export async function listRepositoriesWithTrafficCounts(repositories: Repository
     trends: Array.from(dailyTraffic.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, value]) => ({ date, stars: 0, forks: 0, downloads: 0, views: value.views, clones: value.clones }))
+  };
+}
+
+export async function getRepositoryTrafficDetails(repository: RepositorySummary, options: GitHubClientOptions): Promise<RepositoryTrafficDetails> {
+  if (options.mock) return { trends: [], popularPaths: [], referrers: [] };
+
+  const client = createGitHubClient(options);
+  if (!client) {
+    throw new GitHubConfigurationRequiredError();
+  }
+
+  const [views, clones, popularPaths, referrers] = await Promise.all([
+    client.request("GET /repos/{owner}/{repo}/traffic/views", {
+      owner: repository.owner,
+      repo: repository.name,
+      per: "day"
+    }).catch(() => null),
+    client.request("GET /repos/{owner}/{repo}/traffic/clones", {
+      owner: repository.owner,
+      repo: repository.name,
+      per: "day"
+    }).catch(() => null),
+    client.request("GET /repos/{owner}/{repo}/traffic/popular/paths", {
+      owner: repository.owner,
+      repo: repository.name
+    }).catch(() => null),
+    client.request("GET /repos/{owner}/{repo}/traffic/popular/referrers", {
+      owner: repository.owner,
+      repo: repository.name
+    }).catch(() => null)
+  ]);
+
+  const dailyTraffic = new Map<string, { views: number; clones: number }>();
+  for (const point of readTrafficSeries(views?.data, "views", "uniques")) {
+    const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
+    dailyTraffic.set(point.date, { ...current, views: current.views + point.value });
+  }
+  for (const point of readTrafficSeries(clones?.data, "clones", "count")) {
+    const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
+    dailyTraffic.set(point.date, { ...current, clones: current.clones + point.value });
+  }
+
+  return {
+    trends: Array.from(dailyTraffic.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, value]) => ({ date, stars: 0, forks: 0, downloads: 0, views: value.views, clones: value.clones })),
+    popularPaths: readPopularPaths(popularPaths?.data),
+    referrers: readReferrers(referrers?.data)
   };
 }
 
@@ -317,6 +384,35 @@ function readTrafficSeries(data: unknown, seriesKey: "views" | "clones", preferr
     const item = point as { timestamp?: unknown; count?: unknown; uniques?: unknown };
     if (typeof item.timestamp !== "string") return [];
     return [{ date: item.timestamp.slice(0, 10), value: readTrafficNumber(item, preferredKey) }];
+  });
+}
+
+function readPopularPaths(data: unknown): RepositoryPopularPath[] {
+  if (!Array.isArray(data)) return [];
+  return data.flatMap((value) => {
+    if (!value || typeof value !== "object") return [];
+    const item = value as { path?: unknown; title?: unknown; count?: unknown; uniques?: unknown };
+    if (typeof item.path !== "string") return [];
+    return [{
+      path: item.path,
+      title: typeof item.title === "string" ? item.title : item.path,
+      count: typeof item.count === "number" ? item.count : 0,
+      uniques: typeof item.uniques === "number" ? item.uniques : 0
+    }];
+  });
+}
+
+function readReferrers(data: unknown): RepositoryReferrer[] {
+  if (!Array.isArray(data)) return [];
+  return data.flatMap((value) => {
+    if (!value || typeof value !== "object") return [];
+    const item = value as { referrer?: unknown; count?: unknown; uniques?: unknown };
+    if (typeof item.referrer !== "string") return [];
+    return [{
+      referrer: item.referrer,
+      count: typeof item.count === "number" ? item.count : 0,
+      uniques: typeof item.uniques === "number" ? item.uniques : 0
+    }];
   });
 }
 

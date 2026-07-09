@@ -1,7 +1,7 @@
 import { Download, ExternalLink, GitFork, Star, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Card, Chip, EmptyState } from "../../../components/ui";
-import { getReleaseData, getRepositoryData, getRepositoryReleaseAssets, getRepositoryTrafficTrends, isGitHubConfigurationRequired } from "../../../lib/data-source";
+import { getReleaseData, getRepositoryData, getRepositoryReleaseAssets, getRepositoryTrafficData, isGitHubConfigurationRequired } from "../../../lib/data-source";
 import { formatCompactNumber } from "../../../lib/format";
 import { translateVisibility, type Locale } from "../../../lib/i18n";
 import { getDictionary } from "../../../lib/locale";
@@ -20,7 +20,7 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
   const { source, repository: repo } = await getRepositoryData(id);
   const releaseData = source.demo ? await getReleaseData() : undefined;
   const assets = repo ? source.demo ? releaseData?.assets.filter((asset) => asset.repositoryId === repo.id) || [] : await getRepositoryReleaseAssets(repo) : [];
-  const trafficTrends = repo ? source.demo ? releaseData?.overview.viewsVsClones || [] : await getRepositoryTrafficTrends(repo) : [];
+  const trafficData = repo ? await getRepositoryTrafficData(repo) : { trends: [], popularPaths: [], referrers: [] };
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
 
   if (!repo) {
@@ -105,7 +105,8 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
         locale={locale}
         repo={repo}
         sourceDescription={sourceDescription}
-        trafficTrends={trafficTrends}
+        trafficTrends={trafficData.trends}
+        popularPaths={trafficData.popularPaths}
         useDemoContent={source.demo}
       />
     </div>

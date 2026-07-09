@@ -30,11 +30,19 @@ type Labels = {
   viewsVsClones: string;
 };
 
+type PopularPath = {
+  path: string;
+  title: string;
+  count: number;
+  uniques: number;
+};
+
 export function RepositoryDetailTabs({
   assets,
   growthTrends,
   labels,
   locale,
+  popularPaths,
   repo,
   sourceDescription,
   trafficTrends,
@@ -44,13 +52,13 @@ export function RepositoryDetailTabs({
   growthTrends: TrendPoint[];
   labels: Labels;
   locale: Locale;
+  popularPaths: PopularPath[];
   repo: RepositorySummary;
   sourceDescription: string;
   trafficTrends: TrendPoint[];
   useDemoContent: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<DetailTabKey>("overview");
-  const popularPaths = useDemoContent ? ["/README.md", "/releases", `/releases/tag/${repo.latestRelease}`, "/tree/main/apps"] : [];
 
   return (
     <div className="space-y-4">
@@ -90,10 +98,10 @@ export function RepositoryDetailTabs({
           <Card>
             <SectionTitle title={labels.popularContent} />
             <div className="mt-4 space-y-3 text-sm">
-              {popularPaths.length > 0 ? popularPaths.map((path) => (
-                <div key={path} className="flex justify-between rounded-lg bg-slate-50 px-3 py-2">
-                  <span>{path}</span>
-                  <span className="font-medium">{formatCompactNumber(Math.round(repo.visitors14d / 6), locale)}</span>
+              {popularPaths.length > 0 ? popularPaths.map((item) => (
+                <div key={item.path} className="flex justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2" title={item.title}>
+                  <span className="truncate">{item.path}</span>
+                  <span className="shrink-0 font-medium">{formatCompactNumber(item.count, locale)}</span>
                 </div>
               )) : <EmptyState title={labels.noDataYet} description={sourceDescription} />}
             </div>
