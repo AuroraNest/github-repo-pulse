@@ -100,7 +100,7 @@ export default async function OverviewPage() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700">{index + 1}</span>
                   <span className="font-medium">{repo.name}</span>
                 </div>
-                <span className="text-sm font-semibold text-emerald-600">+{repo.growthPercent}%</span>
+                <span className="text-sm font-semibold text-emerald-600">{source.demo ? `+${repo.growthPercent}%` : `${formatCompactNumber(repo.metricValue, locale)} Stars`}</span>
               </Link>
             )) : <EmptyState title={t.common.noRepositories} description={sourceDescription} />}
           </div>
