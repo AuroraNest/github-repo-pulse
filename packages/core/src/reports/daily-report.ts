@@ -39,8 +39,8 @@ export function generateDailyReport(input: GenerateDailyReportInput): ReportData
   ];
   const fastestMovers = input.overview.fastestGrowingRepositories.map((repo) => ({
     repository: repo.name,
-    metric: copy.growth,
-    change: `+${repo.growthPercent}%`,
+    metric: copy.stars,
+    change: copy.baseline,
     value: repo.metricValue.toLocaleString(numberLocale)
   }));
   const title = copy.title(input.date);
@@ -112,10 +112,10 @@ type ReportCopy = {
   anomaliesHeading: string;
   assetColumn: string;
   assetDownloads: (assetName: string, downloads: number) => string;
+  baseline: string;
   changeColumn: string;
   checkTrafficWarnings: string;
   downloadsColumn: string;
-  growth: string;
   highlightsHeading: string;
   keyMetricsHeading: string;
   metricColumn: string;
@@ -130,6 +130,7 @@ type ReportCopy = {
   summaryHeading: string;
   suggestedActionsHeading: string;
   syncReleaseAssets: string;
+  stars: string;
   title: (date: string) => string;
   todayChange: (downloads: number) => string;
   todayColumn: string;
@@ -148,10 +149,10 @@ const enCopy: ReportCopy = {
   anomaliesHeading: "Anomalies",
   assetColumn: "Asset",
   assetDownloads: (assetName, downloads) => `${assetName} has ${downloads} total downloads.`,
+  baseline: "Baseline",
   changeColumn: "Change",
   checkTrafficWarnings: "Check repositories with traffic permission warnings before the next scheduled sync.",
   downloadsColumn: "Downloads",
-  growth: "Growth",
   highlightsHeading: "Highlights",
   keyMetricsHeading: "Key Metrics",
   metricColumn: "Metric",
@@ -166,6 +167,7 @@ const enCopy: ReportCopy = {
   summaryHeading: "Summary",
   suggestedActionsHeading: "Suggested Actions",
   syncReleaseAssets: "Sync release assets before reviewing download momentum.",
+  stars: "Stars",
   title: (date) => `RepoPulse Daily Report - ${date}`,
   todayChange: (downloads) => `+${downloads} today`,
   todayColumn: "Today",
@@ -184,10 +186,10 @@ const zhCopy: ReportCopy = {
   anomaliesHeading: "异常",
   assetColumn: "资产",
   assetDownloads: (assetName, downloads) => `${assetName} 累计 ${downloads} 次下载.`,
+  baseline: "基线",
   changeColumn: "变化",
   checkTrafficWarnings: "下次计划同步前检查存在流量权限告警的仓库.",
   downloadsColumn: "下载量",
-  growth: "增长",
   highlightsHeading: "今日亮点",
   keyMetricsHeading: "关键指标",
   metricColumn: "指标",
@@ -202,6 +204,7 @@ const zhCopy: ReportCopy = {
   summaryHeading: "摘要",
   suggestedActionsHeading: "建议操作",
   syncReleaseAssets: "先同步发布资产, 再评估下载趋势.",
+  stars: "Stars",
   title: (date) => `RepoPulse 日报 - ${date}`,
   todayChange: (downloads) => `+${downloads} 今日`,
   todayColumn: "今日",
