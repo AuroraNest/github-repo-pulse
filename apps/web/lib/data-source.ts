@@ -18,7 +18,7 @@ import {
   type SyncRun,
   type TrendPoint
 } from "@repopulse/core";
-import { readReports, readSyncRuns } from "@repopulse/db";
+import { readReleaseAssetDeltas, readRepositorySnapshotTrends, readReports, readSyncRuns, readTrafficDailyTrends } from "@repopulse/db";
 import { readGitHubRuntimeConfig } from "./runtime-github-token";
 import { applyRuntimeSetupState, getSetupState } from "./runtime-setup-state";
 
@@ -112,19 +112,25 @@ export async function getOverviewData(): Promise<{ source: GitHubDataSource; ove
     })),
     listReleaseAssetsForRepositories(trackedRepositories, githubOptions).catch(() => [])
   ]);
+  const assetsWithDeltas = await applyPersistedReleaseDeltas(assets);
+  const [growthTrends, storedTrafficTrends] = await Promise.all([
+    readRepositorySnapshotTrends(trackedRepositories.map((repository) => repository.id), 30).catch(() => []),
+    readTrafficDailyTrends(trackedRepositories.map((repository) => repository.id), 30).catch(() => [])
+  ]);
 
-  return { source, overview: buildOverview(traffic.repositories, assets, buildSyncActivity(runs), [], traffic.trends) };
+  return { source, overview: buildOverview(traffic.repositories, assetsWithDeltas, buildSyncActivity(runs), growthTrends, storedTrafficTrends.length > 0 ? storedTrafficTrends : traffic.trends) };
 }
 
 export async function getReportGenerationData(): Promise<{ source: GitHubDataSource; overview: OverviewData; repositories: RepositorySummary[]; assets: ReleaseAssetSummary[] }> {
   const { config, source } = await readRuntimeSource();
   const repositories = source.demo ? mockRepositories : (await getRepositoryCollection({ includeMetrics: true })).repositories;
   const trackedRepositories = source.demo ? repositories : getTrackedRepositories(repositories);
-  const assets = source.demo ? mockReleaseAssets : await listReleaseAssetsForRepositories(trackedRepositories, {
+  const liveAssets = source.demo ? mockReleaseAssets : await listReleaseAssetsForRepositories(trackedRepositories, {
     token: config.githubToken,
     baseUrl: config.githubApiBaseUrl,
     mock: false
   }).catch(() => []);
+  const assets = source.demo ? liveAssets : await applyPersistedReleaseDeltas(liveAssets);
   const overview = source.demo ? mockOverview : buildOverview(trackedRepositories, assets);
 
   return { source, overview, repositories: trackedRepositories, assets };
@@ -153,11 +159,12 @@ export async function getRepositoryReleaseAssets(repository: RepositorySummary):
   }
   if (source.mode !== "live") return [];
 
-  return listReleaseAssetsForRepositories([repository], {
+  const assets = await listReleaseAssetsForRepositories([repository], {
     token: config.githubToken,
     baseUrl: config.githubApiBaseUrl,
     mock: false
   }).catch(() => []);
+  return applyPersistedReleaseDeltas(assets);
 }
 
 export async function getRepositoryTrafficTrends(repository: RepositorySummary): Promise<TrendPoint[]> {
@@ -169,6 +176,7 @@ export async function getRepositoryTrafficData(repository: RepositorySummary) {
   if (source.demo) {
     return {
       trends: mockOverview.viewsVsClones,
+      daily: [],
       popularPaths: [
         { path: "/README.md", title: "README", count: Math.max(1, Math.round(repository.visitors14d / 2)), uniques: Math.max(1, Math.round(repository.visitors14d / 3)) },
         { path: "/releases", title: "Releases", count: Math.max(1, Math.round(repository.visitors14d / 3)), uniques: Math.max(1, Math.round(repository.visitors14d / 4)) },
@@ -177,13 +185,13 @@ export async function getRepositoryTrafficData(repository: RepositorySummary) {
       referrers: []
     };
   }
-  if (source.mode !== "live") return { trends: [], popularPaths: [], referrers: [] };
+  if (source.mode !== "live") return { trends: [], daily: [], popularPaths: [], referrers: [] };
 
   return getRepositoryTrafficDetails(repository, {
     token: config.githubToken,
     baseUrl: config.githubApiBaseUrl,
     mock: false
-  }).catch(() => ({ trends: [], popularPaths: [], referrers: [] }));
+  }).catch(() => ({ trends: [], daily: [], popularPaths: [], referrers: [] }));
 }
 
 export async function getReleaseData(): Promise<{ source: GitHubDataSource; assets: ReleaseAssetSummary[]; overview: OverviewData }> {
@@ -194,11 +202,12 @@ export async function getReleaseData(): Promise<{ source: GitHubDataSource; asse
 
   const { repositories } = await getRepositoryCollection();
   const trackedRepositories = getTrackedRepositories(repositories);
-  const assets = await listReleaseAssetsForRepositories(trackedRepositories, {
+  const liveAssets = await listReleaseAssetsForRepositories(trackedRepositories, {
     token: config.githubToken,
     baseUrl: config.githubApiBaseUrl,
     mock: false
   }).catch(() => []);
+  const assets = await applyPersistedReleaseDeltas(liveAssets);
 
   return { source, assets, overview: buildOverview(trackedRepositories, assets) };
 }
@@ -351,6 +360,22 @@ async function enrichRepositoriesWithLiveMetrics(repositories: RepositorySummary
     latestRelease: releaseByRepository.get(repository.id)?.latestRelease || repository.latestRelease,
     totalDownloads: releaseByRepository.get(repository.id)?.totalDownloads || repository.totalDownloads
   }));
+}
+
+async function applyPersistedReleaseDeltas(assets: ReleaseAssetSummary[]) {
+  const deltas = await readReleaseAssetDeltas(assets.map((asset) => asset.id)).catch(() => new Map());
+  return assets.map((asset) => {
+    const delta = deltas.get(asset.id);
+    if (!delta) return asset;
+    return {
+      ...asset,
+      totalDownloads: delta.latestDownloadCount || asset.totalDownloads,
+      todayDownloads: delta.todayDownloads,
+      sevenDayDownloads: delta.sevenDayDownloads,
+      thirtyDayDownloads: delta.thirtyDayDownloads,
+      status: "Active" as const
+    };
+  });
 }
 
 function isRecoverableGitHubError(error: unknown) {

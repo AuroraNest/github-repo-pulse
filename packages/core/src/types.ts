@@ -35,13 +35,33 @@ export type TrendPoint = {
   clones: number;
 };
 
+export type TrafficDailyPoint = {
+  date: string;
+  metric: "views" | "clones";
+  count: number;
+  uniques: number;
+};
+
 export type ReleaseAssetSummary = {
   id: string;
+  githubAssetId?: number;
+  releaseId?: string;
+  githubReleaseId?: number;
   repositoryId: string;
   repository: string;
   tagName: string;
+  releaseName?: string | null;
+  releaseHtmlUrl?: string | null;
+  releaseCreatedAt?: string;
+  releaseUpdatedAt?: string;
   assetName: string;
+  assetLabel?: string | null;
   assetSize: string;
+  assetSizeBytes?: number;
+  assetContentType?: string | null;
+  assetState?: string | null;
+  assetCreatedAt?: string;
+  assetUpdatedAt?: string;
   publishedAt: string;
   totalDownloads: number;
   todayDownloads: number;

@@ -3,6 +3,7 @@ import { saveSyncRun } from "@repopulse/db";
 import { NextRequest } from "next/server";
 import { jsonError, jsonOk } from "../../../../../lib/api";
 import { getRepositoryData, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
+import { captureRepositoryMetricSnapshot } from "../../../../../lib/metric-snapshots";
 import { readGitHubRuntimeConfig } from "../../../../../lib/runtime-github-token";
 import { requireSession } from "../../../../../lib/session";
 
@@ -33,8 +34,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     baseUrl: config.githubApiBaseUrl,
     mock: config.mockGitHub
   });
+  const databaseEnabled = Boolean(readRuntimeConfig().databaseUrl);
+  if (databaseEnabled && result.collectedRepo && !config.mockGitHub) {
+    await captureRepositoryMetricSnapshot(repository);
+  }
   const finishedAt = new Date().toISOString();
-  if (readRuntimeConfig().databaseUrl) {
+  if (databaseEnabled) {
     await saveSyncRun({
       id: runId,
       trigger: "api",

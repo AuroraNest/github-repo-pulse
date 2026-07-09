@@ -105,6 +105,31 @@ type SyncRunItemRow = RowDataPacket & {
   error_message: string | null;
 };
 
+type PreviousAssetSnapshotRow = RowDataPacket & {
+  download_count: number;
+};
+
+type ReleaseAssetDeltaRow = RowDataPacket & {
+  asset_id: string;
+  snapshot_date: Date | string;
+  download_count: number;
+  daily_delta: number;
+};
+
+type RepositorySnapshotTrendRow = RowDataPacket & {
+  snapshot_date: Date | string;
+  stars_count: number;
+  forks_count: number;
+  total_release_downloads: number;
+};
+
+type TrafficDailyTrendRow = RowDataPacket & {
+  traffic_date: Date | string;
+  metric: "views" | "clones";
+  count: number;
+  uniques: number;
+};
+
 export type PersistedReport = {
   id: string;
   type: "daily" | "weekly" | "monthly";
@@ -140,6 +165,74 @@ export type PersistedSyncRun = {
   successCount: number;
   failedCount: number;
   errorMessage: string | null;
+};
+
+export type SnapshotTrafficDailyPoint = {
+  date: string;
+  metric: "views" | "clones";
+  count: number;
+  uniques: number;
+};
+
+export type SnapshotTrafficData = {
+  daily?: SnapshotTrafficDailyPoint[];
+  popularPaths?: Array<{ path: string; title: string; count: number; uniques: number }>;
+  referrers?: Array<{ referrer: string; count: number; uniques: number }>;
+};
+
+export type SnapshotReleaseAsset = {
+  id: string;
+  githubAssetId?: number;
+  releaseId?: string;
+  githubReleaseId?: number;
+  repositoryId: string;
+  tagName: string;
+  releaseName?: string | null;
+  releaseHtmlUrl?: string | null;
+  releaseCreatedAt?: string;
+  releaseUpdatedAt?: string;
+  assetName: string;
+  assetLabel?: string | null;
+  assetSizeBytes?: number;
+  assetContentType?: string | null;
+  assetState?: string | null;
+  assetCreatedAt?: string;
+  assetUpdatedAt?: string;
+  publishedAt: string;
+  totalDownloads: number;
+  browserDownloadUrl: string;
+};
+
+export type RepositoryMetricSnapshotInput = {
+  snapshotDate?: string;
+  repositories: Array<{
+    repository: {
+      id: string;
+      stars: number;
+      forks: number;
+      latestRelease: string;
+      totalDownloads: number;
+    };
+    traffic?: SnapshotTrafficData;
+    assets?: SnapshotReleaseAsset[];
+  }>;
+};
+
+export type ReleaseAssetDelta = {
+  assetId: string;
+  latestDownloadCount: number;
+  todayDownloads: number;
+  sevenDayDownloads: number;
+  thirtyDayDownloads: number;
+};
+
+export type SnapshotTrendPoint = {
+  date: string;
+  stars: number;
+  forks: number;
+  downloads: number;
+  views: number;
+  clones: number;
 };
 
 export function defaultAppSettings(): AppSettings {
@@ -454,6 +547,112 @@ export async function readSyncRunWithItems(id: string): Promise<{ run: Persisted
   }
 }
 
+export async function readReleaseAssetDeltas(assetIds: string[]): Promise<Map<string, ReleaseAssetDelta>> {
+  if (assetIds.length === 0) return new Map();
+
+  const pool = await createPool();
+  const placeholders = assetIds.map(() => "?").join(", ");
+  try {
+    const [rows] = await pool.query<ReleaseAssetDeltaRow[]>(
+      `SELECT asset_id, snapshot_date, download_count, daily_delta
+       FROM release_asset_snapshots
+       WHERE asset_id IN (${placeholders})
+         AND snapshot_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+       ORDER BY asset_id, snapshot_date ASC`,
+      assetIds
+    );
+
+    const deltas = new Map<string, ReleaseAssetDelta>();
+    const sevenDayCutoff = dateDaysAgo(6);
+    for (const row of rows) {
+      const snapshotDate = rowDateToDateOnly(row.snapshot_date);
+      const current = deltas.get(row.asset_id) || {
+        assetId: row.asset_id,
+        latestDownloadCount: row.download_count,
+        todayDownloads: 0,
+        sevenDayDownloads: 0,
+        thirtyDayDownloads: 0
+      };
+      current.latestDownloadCount = row.download_count;
+      current.todayDownloads = row.daily_delta;
+      if (snapshotDate >= sevenDayCutoff) {
+        current.sevenDayDownloads += row.daily_delta;
+      }
+      current.thirtyDayDownloads += row.daily_delta;
+      deltas.set(row.asset_id, current);
+    }
+    return deltas;
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function readRepositorySnapshotTrends(repositoryIds: string[], days = 30): Promise<SnapshotTrendPoint[]> {
+  if (repositoryIds.length === 0) return [];
+
+  const pool = await createPool();
+  const placeholders = repositoryIds.map(() => "?").join(", ");
+  try {
+    const [rows] = await pool.query<RepositorySnapshotTrendRow[]>(
+      `SELECT snapshot_date,
+              SUM(stars_count) AS stars_count,
+              SUM(forks_count) AS forks_count,
+              SUM(total_release_downloads) AS total_release_downloads
+       FROM repository_snapshots
+       WHERE repository_id IN (${placeholders})
+         AND snapshot_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+       GROUP BY snapshot_date
+       ORDER BY snapshot_date ASC`,
+      [...repositoryIds, days]
+    );
+
+    return rows.map((row) => ({
+      date: rowDateToDateOnly(row.snapshot_date),
+      stars: Number(row.stars_count) || 0,
+      forks: Number(row.forks_count) || 0,
+      downloads: Number(row.total_release_downloads) || 0,
+      views: 0,
+      clones: 0
+    }));
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function readTrafficDailyTrends(repositoryIds: string[], days = 30): Promise<SnapshotTrendPoint[]> {
+  if (repositoryIds.length === 0) return [];
+
+  const pool = await createPool();
+  const placeholders = repositoryIds.map(() => "?").join(", ");
+  try {
+    const [rows] = await pool.query<TrafficDailyTrendRow[]>(
+      `SELECT traffic_date, metric, SUM(count) AS count, SUM(uniques) AS uniques
+       FROM traffic_daily
+       WHERE repository_id IN (${placeholders})
+         AND traffic_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+       GROUP BY traffic_date, metric
+       ORDER BY traffic_date ASC`,
+      [...repositoryIds, days]
+    );
+
+    const byDate = new Map<string, SnapshotTrendPoint>();
+    for (const row of rows) {
+      const date = rowDateToDateOnly(row.traffic_date);
+      const current = byDate.get(date) || { date, stars: 0, forks: 0, downloads: 0, views: 0, clones: 0 };
+      if (row.metric === "views") {
+        current.views = Number(row.uniques) || 0;
+      } else {
+        current.clones = Number(row.count) || 0;
+      }
+      byDate.set(date, current);
+    }
+
+    return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+  } finally {
+    await pool.end();
+  }
+}
+
 export async function saveSyncRun(input: {
   id: string;
   trigger: "schedule" | "manual" | "setup" | "api";
@@ -541,10 +740,287 @@ export async function saveSyncRun(input: {
   }
 }
 
+export async function saveRepositoryMetricSnapshots(input: RepositoryMetricSnapshotInput) {
+  const snapshotDate = toDateOnly(input.snapshotDate || new Date().toISOString());
+  const pool = await createPool();
+  try {
+    for (const item of input.repositories) {
+      const assets = item.assets || [];
+      const latestAsset = assets
+        .slice()
+        .sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))[0];
+      const releaseTags = new Set(assets.map((asset) => asset.tagName).filter(Boolean));
+      const totalDownloads = assets.reduce((sum, asset) => sum + asset.totalDownloads, 0) || item.repository.totalDownloads;
+
+      await pool.execute<ResultSetHeader>(
+        `INSERT INTO repository_snapshots
+           (id, repository_id, snapshot_date, stars_count, forks_count, watchers_count, open_issues_count,
+            release_count, latest_release_tag, latest_release_at, total_release_downloads)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           stars_count = VALUES(stars_count),
+           forks_count = VALUES(forks_count),
+           watchers_count = VALUES(watchers_count),
+           release_count = VALUES(release_count),
+           latest_release_tag = VALUES(latest_release_tag),
+           latest_release_at = VALUES(latest_release_at),
+           total_release_downloads = VALUES(total_release_downloads)`,
+        [
+          `repo-snap-${item.repository.id}-${snapshotDate}`,
+          item.repository.id,
+          snapshotDate,
+          item.repository.stars,
+          item.repository.forks,
+          item.repository.stars,
+          releaseTags.size,
+          latestAsset?.tagName || normalizeLatestRelease(item.repository.latestRelease),
+          latestAsset?.publishedAt ? toMysqlDateTime(latestAsset.publishedAt) : null,
+          totalDownloads
+        ]
+      );
+
+      await saveTrafficSnapshotRows(pool, item.repository.id, snapshotDate, item.traffic);
+      await saveReleaseSnapshotRows(pool, item.repository.id, snapshotDate, assets);
+    }
+  } finally {
+    await pool.end();
+  }
+}
+
 function toMysqlDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+function toDateOnly(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10);
+  return date.toISOString().slice(0, 10);
+}
+
+function rowDateToDateOnly(value: Date | string) {
+  if (value instanceof Date) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const day = String(value.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+  return String(value).slice(0, 10);
+}
+
+function dateDaysAgo(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return rowDateToDateOnly(date);
+}
+
+function normalizeLatestRelease(value: string) {
+  return value && value !== "Not synced" ? value : null;
+}
+
+async function saveTrafficSnapshotRows(
+  pool: Awaited<ReturnType<typeof createPool>>,
+  repositoryId: string,
+  snapshotDate: string,
+  traffic?: SnapshotTrafficData
+) {
+  const daily = traffic?.daily || [];
+  const popularPaths = traffic?.popularPaths || [];
+  const referrers = traffic?.referrers || [];
+  if (daily.length === 0 && popularPaths.length === 0 && referrers.length === 0) return;
+
+  let viewsCount = 0;
+  let viewsUniques = 0;
+  let clonesCount = 0;
+  let clonesUniques = 0;
+
+  for (const point of daily) {
+    if (point.metric === "views") {
+      viewsCount += point.count;
+      viewsUniques += point.uniques;
+    } else {
+      clonesCount += point.count;
+      clonesUniques += point.uniques;
+    }
+
+    await pool.execute<ResultSetHeader>(
+      `INSERT INTO traffic_daily
+         (id, repository_id, metric, traffic_date, count, uniques, last_seen_snapshot_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         count = VALUES(count),
+         uniques = VALUES(uniques),
+         last_seen_snapshot_date = VALUES(last_seen_snapshot_date)`,
+      [
+        `traffic-${repositoryId}-${point.metric}-${point.date}`,
+        repositoryId,
+        point.metric,
+        point.date,
+        point.count,
+        point.uniques,
+        snapshotDate
+      ]
+    );
+  }
+
+  await pool.execute<ResultSetHeader>(
+    `INSERT INTO traffic_summary_snapshots
+       (id, repository_id, snapshot_date, views_count_14d, views_uniques_14d, clones_count_14d, clones_uniques_14d)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       views_count_14d = VALUES(views_count_14d),
+       views_uniques_14d = VALUES(views_uniques_14d),
+       clones_count_14d = VALUES(clones_count_14d),
+       clones_uniques_14d = VALUES(clones_uniques_14d)`,
+    [
+      `traffic-sum-${repositoryId}-${snapshotDate}`,
+      repositoryId,
+      snapshotDate,
+      viewsCount,
+      viewsUniques,
+      clonesCount,
+      clonesUniques
+    ]
+  );
+
+  for (const [index, path] of popularPaths.entries()) {
+    await pool.execute<ResultSetHeader>(
+      `INSERT INTO popular_path_snapshots
+         (id, repository_id, snapshot_date, path, title, count, uniques)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         title = VALUES(title),
+         count = VALUES(count),
+         uniques = VALUES(uniques)`,
+      [
+        `path-${repositoryId}-${snapshotDate}-${index}`,
+        repositoryId,
+        snapshotDate,
+        path.path,
+        path.title,
+        path.count,
+        path.uniques
+      ]
+    );
+  }
+
+  for (const [index, referrer] of referrers.entries()) {
+    await pool.execute<ResultSetHeader>(
+      `INSERT INTO referrer_snapshots
+         (id, repository_id, snapshot_date, referrer, count, uniques)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         count = VALUES(count),
+         uniques = VALUES(uniques)`,
+      [
+        `ref-${repositoryId}-${snapshotDate}-${index}`,
+        repositoryId,
+        snapshotDate,
+        referrer.referrer,
+        referrer.count,
+        referrer.uniques
+      ]
+    );
+  }
+}
+
+async function saveReleaseSnapshotRows(
+  pool: Awaited<ReturnType<typeof createPool>>,
+  repositoryId: string,
+  snapshotDate: string,
+  assets: SnapshotReleaseAsset[]
+) {
+  for (const asset of assets) {
+    if (!asset.githubReleaseId || !asset.githubAssetId) continue;
+
+    const releaseId = asset.releaseId || `github-release-${asset.githubReleaseId}`;
+    await pool.execute<ResultSetHeader>(
+      `INSERT INTO releases
+         (id, github_release_id, repository_id, tag_name, name, html_url, draft, prerelease,
+          published_at, github_created_at, github_updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, FALSE, FALSE, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         tag_name = VALUES(tag_name),
+         name = VALUES(name),
+         html_url = VALUES(html_url),
+         published_at = VALUES(published_at),
+         github_created_at = VALUES(github_created_at),
+         github_updated_at = VALUES(github_updated_at)`,
+      [
+        releaseId,
+        asset.githubReleaseId,
+        repositoryId,
+        asset.tagName,
+        asset.releaseName || null,
+        asset.releaseHtmlUrl || null,
+        toMysqlDateTime(asset.publishedAt),
+        asset.releaseCreatedAt ? toMysqlDateTime(asset.releaseCreatedAt) : null,
+        asset.releaseUpdatedAt ? toMysqlDateTime(asset.releaseUpdatedAt) : null
+      ]
+    );
+
+    await pool.execute<ResultSetHeader>(
+      `INSERT INTO release_assets
+         (id, github_asset_id, release_id, repository_id, name, label, content_type, size_bytes,
+          browser_download_url, state, active, created_at_github, updated_at_github)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         release_id = VALUES(release_id),
+         repository_id = VALUES(repository_id),
+         name = VALUES(name),
+         label = VALUES(label),
+         content_type = VALUES(content_type),
+         size_bytes = VALUES(size_bytes),
+         browser_download_url = VALUES(browser_download_url),
+         state = VALUES(state),
+         active = TRUE,
+         created_at_github = VALUES(created_at_github),
+         updated_at_github = VALUES(updated_at_github)`,
+      [
+        asset.id,
+        asset.githubAssetId,
+        releaseId,
+        repositoryId,
+        asset.assetName,
+        asset.assetLabel || null,
+        asset.assetContentType || null,
+        asset.assetSizeBytes || 0,
+        asset.browserDownloadUrl || null,
+        asset.assetState || null,
+        asset.assetCreatedAt ? toMysqlDateTime(asset.assetCreatedAt) : null,
+        asset.assetUpdatedAt ? toMysqlDateTime(asset.assetUpdatedAt) : null
+      ]
+    );
+
+    const [previousRows] = await pool.query<PreviousAssetSnapshotRow[]>(
+      `SELECT download_count
+       FROM release_asset_snapshots
+       WHERE asset_id = ? AND snapshot_date < ?
+       ORDER BY snapshot_date DESC
+       LIMIT 1`,
+      [asset.id, snapshotDate]
+    );
+    const previousCount = previousRows[0]?.download_count;
+    const dailyDelta = typeof previousCount === "number" ? Math.max(0, asset.totalDownloads - previousCount) : 0;
+
+    await pool.execute<ResultSetHeader>(
+      `INSERT INTO release_asset_snapshots
+         (id, asset_id, repository_id, snapshot_date, download_count, daily_delta)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         download_count = VALUES(download_count),
+         daily_delta = VALUES(daily_delta)`,
+      [
+        `asset-snap-${asset.id}-${snapshotDate}`,
+        asset.id,
+        repositoryId,
+        snapshotDate,
+        asset.totalDownloads,
+        dailyDelta
+      ]
+    );
+  }
 }
 
 function toIsoString(value: Date | string) {

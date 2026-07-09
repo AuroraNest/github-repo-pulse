@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { mockRepositories } from "../mock-data";
-import type { ReleaseAssetSummary, RepositorySummary, TrendPoint } from "../types";
+import type { ReleaseAssetSummary, RepositorySummary, TrafficDailyPoint, TrendPoint } from "../types";
 
 export type GitHubClientOptions = {
   token?: string;
@@ -40,6 +40,7 @@ export type RepositoryReferrer = {
 
 export type RepositoryTrafficDetails = {
   trends: TrendPoint[];
+  daily: TrafficDailyPoint[];
   popularPaths: RepositoryPopularPath[];
   referrers: RepositoryReferrer[];
 };
@@ -187,7 +188,7 @@ export async function listRepositoriesWithTrafficCounts(repositories: Repository
 }
 
 export async function getRepositoryTrafficDetails(repository: RepositorySummary, options: GitHubClientOptions): Promise<RepositoryTrafficDetails> {
-  if (options.mock) return { trends: [], popularPaths: [], referrers: [] };
+  if (options.mock) return { trends: [], daily: [], popularPaths: [], referrers: [] };
 
   const client = createGitHubClient(options);
   if (!client) {
@@ -215,20 +216,25 @@ export async function getRepositoryTrafficDetails(repository: RepositorySummary,
     }).catch(() => null)
   ]);
 
+  const daily = [
+    ...readTrafficDailySeries(views?.data, "views"),
+    ...readTrafficDailySeries(clones?.data, "clones")
+  ];
   const dailyTraffic = new Map<string, { views: number; clones: number }>();
-  for (const point of readTrafficSeries(views?.data, "views", "uniques")) {
+  for (const point of daily.filter((item) => item.metric === "views")) {
     const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
-    dailyTraffic.set(point.date, { ...current, views: current.views + point.value });
+    dailyTraffic.set(point.date, { ...current, views: current.views + point.uniques });
   }
-  for (const point of readTrafficSeries(clones?.data, "clones", "count")) {
+  for (const point of daily.filter((item) => item.metric === "clones")) {
     const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
-    dailyTraffic.set(point.date, { ...current, clones: current.clones + point.value });
+    dailyTraffic.set(point.date, { ...current, clones: current.clones + point.count });
   }
 
   return {
     trends: Array.from(dailyTraffic.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, value]) => ({ date, stars: 0, forks: 0, downloads: 0, views: value.views, clones: value.clones })),
+    daily,
     popularPaths: readPopularPaths(popularPaths?.data),
     referrers: readReferrers(referrers?.data)
   };
@@ -317,12 +323,25 @@ export async function listReleaseAssetsForRepositories(repositories: RepositoryS
       for (const asset of release.assets || []) {
         repositoryAssets.push({
           id: `github-asset-${asset.id}`,
+          githubAssetId: asset.id,
+          releaseId: `github-release-${release.id}`,
+          githubReleaseId: release.id,
           repositoryId: repository.id,
           repository: repository.name,
           tagName: release.tag_name,
+          releaseName: release.name || null,
+          releaseHtmlUrl: release.html_url || null,
+          releaseCreatedAt: release.created_at || undefined,
+          releaseUpdatedAt: release.updated_at || undefined,
           assetName: asset.name,
+          assetLabel: asset.label || null,
           assetSize: formatBytes(asset.size || 0),
+          assetSizeBytes: asset.size || 0,
+          assetContentType: asset.content_type || null,
+          assetState: asset.state || null,
           publishedAt: asset.created_at || release.published_at || release.created_at || "",
+          assetCreatedAt: asset.created_at || undefined,
+          assetUpdatedAt: asset.updated_at || undefined,
           totalDownloads: asset.download_count || 0,
           todayDownloads: 0,
           sevenDayDownloads: 0,
@@ -384,6 +403,24 @@ function readTrafficSeries(data: unknown, seriesKey: "views" | "clones", preferr
     const item = point as { timestamp?: unknown; count?: unknown; uniques?: unknown };
     if (typeof item.timestamp !== "string") return [];
     return [{ date: item.timestamp.slice(0, 10), value: readTrafficNumber(item, preferredKey) }];
+  });
+}
+
+function readTrafficDailySeries(data: unknown, seriesKey: "views" | "clones"): TrafficDailyPoint[] {
+  if (!data || typeof data !== "object") return [];
+  const series = (data as { views?: unknown; clones?: unknown })[seriesKey];
+  if (!Array.isArray(series)) return [];
+
+  return series.flatMap((point) => {
+    if (!point || typeof point !== "object") return [];
+    const item = point as { timestamp?: unknown; count?: unknown; uniques?: unknown };
+    if (typeof item.timestamp !== "string") return [];
+    return [{
+      date: item.timestamp.slice(0, 10),
+      metric: seriesKey,
+      count: typeof item.count === "number" ? item.count : 0,
+      uniques: typeof item.uniques === "number" ? item.uniques : 0
+    }];
   });
 }
 
