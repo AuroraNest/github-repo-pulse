@@ -29,10 +29,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     })),
     popularPaths: source.demo ? ["/", "/releases", `/releases/tag/${repository.latestRelease}`] : [],
     referrers: source.demo ? ["github.com", "google.com", "direct/bookmark"] : [],
-    conversion: {
+    conversion: source.demo ? {
       visitors: repository.visitors14d,
       releasePageViews: Math.round(repository.visitors14d * 0.28),
       downloads: repository.todayDownloads * 7
-    }
+    } : null
   });
 }
