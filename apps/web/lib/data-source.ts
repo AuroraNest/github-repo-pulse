@@ -148,6 +148,20 @@ export async function getRepositoryReleaseAssets(repository: RepositorySummary):
   }).catch(() => []);
 }
 
+export async function getRepositoryTrafficTrends(repository: RepositorySummary): Promise<TrendPoint[]> {
+  const { config, source } = await readRuntimeSource();
+  if (source.demo) return mockOverview.viewsVsClones;
+  if (source.mode !== "live") return [];
+
+  const traffic = await listRepositoriesWithTrafficCounts([repository], {
+    token: config.githubToken,
+    baseUrl: config.githubApiBaseUrl,
+    mock: false
+  }).catch(() => ({ trends: [] }));
+
+  return traffic.trends;
+}
+
 export async function getReleaseData(): Promise<{ source: GitHubDataSource; assets: ReleaseAssetSummary[]; overview: OverviewData }> {
   const { config, source } = await readRuntimeSource();
   if (source.demo) {

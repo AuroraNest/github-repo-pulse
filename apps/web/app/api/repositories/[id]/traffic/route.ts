@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { jsonError, jsonOk } from "../../../../../lib/api";
-import { getReleaseData, getRepositoryData, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
+import { getRepositoryData, getRepositoryTrafficTrends, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
 
 type RouteContext = {
   params: Promise<{ id: string }> | { id: string };
@@ -17,15 +17,15 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return jsonError("NOT_FOUND", "Repository not found.", 404);
   }
 
-  const { overview } = await getReleaseData();
+  const trafficTrends = await getRepositoryTrafficTrends(repository);
 
   return jsonOk({
-    daily: overview.viewsVsClones.map((point) => ({
+    daily: trafficTrends.map((point) => ({
       date: point.date,
       views: point.views,
-      uniqueVisitors: Math.round(point.views * 0.72),
+      uniqueVisitors: point.views,
       clones: point.clones,
-      uniqueCloners: Math.round(point.clones * 0.66)
+      uniqueCloners: point.clones
     })),
     popularPaths: source.demo ? ["/", "/releases", `/releases/tag/${repository.latestRelease}`] : [],
     referrers: source.demo ? ["github.com", "google.com", "direct/bookmark"] : [],
