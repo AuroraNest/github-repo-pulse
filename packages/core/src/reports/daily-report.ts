@@ -12,14 +12,14 @@ type GenerateDailyReportInput = {
 export function generateDailyReport(input: GenerateDailyReportInput): ReportData {
   const locale = input.locale || "en";
   const copy = locale === "zh" ? zhCopy : enCopy;
-  const topRepo = [...input.repositories].sort((a, b) => b.todayDownloads - a.todayDownloads)[0];
-  const topAsset = [...input.assets].sort((a, b) => b.todayDownloads - a.todayDownloads)[0];
+  const topRepo = [...input.repositories].sort((a, b) => b.totalDownloads - a.totalDownloads)[0];
+  const topAsset = [...input.assets].sort((a, b) => b.totalDownloads - a.totalDownloads)[0];
   const topRepoName = topRepo?.name || copy.noRepository;
-  const topRepoDownloads = topRepo?.todayDownloads || 0;
+  const topRepoDownloads = topRepo?.totalDownloads || 0;
   const numberLocale = locale === "zh" ? "zh-CN" : "en-US";
   const summary = copy.summary(topRepoName, topRepoDownloads, input.overview.kpis.totalStars, numberLocale);
   const highlights = [
-    topAsset ? copy.assetDownloads(topAsset.assetName, topAsset.todayDownloads) : copy.noReleaseData,
+    topAsset ? copy.assetDownloads(topAsset.assetName, topAsset.totalDownloads) : copy.noReleaseData,
     copy.trackedRepositories(input.overview.kpis.trackedRepositories),
     copy.visitors(input.overview.kpis.visitors14d, numberLocale)
   ];
@@ -147,7 +147,7 @@ type ReportCopy = {
 const enCopy: ReportCopy = {
   anomaliesHeading: "Anomalies",
   assetColumn: "Asset",
-  assetDownloads: (assetName, downloads) => `${assetName} added ${downloads} downloads today.`,
+  assetDownloads: (assetName, downloads) => `${assetName} has ${downloads} total downloads.`,
   changeColumn: "Change",
   checkTrafficWarnings: "Check repositories with traffic permission warnings before the next scheduled sync.",
   downloadsColumn: "Downloads",
@@ -161,8 +161,8 @@ const enCopy: ReportCopy = {
   noRepository: "No repository",
   releaseDownloadsHeading: "Release Downloads",
   repositoryColumn: "Repository",
-  reviewRelease: (repository) => `Review the ${repository} release notes while download momentum is high.`,
-  summary: (topRepoName, downloads, totalStars, numberLocale) => `${topRepoName} led today's repository activity with ${downloads} new downloads, while tracked repositories reached ${totalStars.toLocaleString(numberLocale)} total stars.`,
+  reviewRelease: (repository) => `Review the ${repository} release notes now that release downloads are measurable.`,
+  summary: (topRepoName, downloads, totalStars, numberLocale) => `${topRepoName} led release download activity with ${downloads} total downloads, while tracked repositories reached ${totalStars.toLocaleString(numberLocale)} total stars.`,
   summaryHeading: "Summary",
   suggestedActionsHeading: "Suggested Actions",
   syncReleaseAssets: "Sync release assets before reviewing download momentum.",
@@ -183,7 +183,7 @@ const enCopy: ReportCopy = {
 const zhCopy: ReportCopy = {
   anomaliesHeading: "异常",
   assetColumn: "资产",
-  assetDownloads: (assetName, downloads) => `${assetName} 今日新增 ${downloads} 次下载.`,
+  assetDownloads: (assetName, downloads) => `${assetName} 累计 ${downloads} 次下载.`,
   changeColumn: "变化",
   checkTrafficWarnings: "下次计划同步前检查存在流量权限告警的仓库.",
   downloadsColumn: "下载量",
@@ -197,8 +197,8 @@ const zhCopy: ReportCopy = {
   noRepository: "暂无仓库",
   releaseDownloadsHeading: "发布下载",
   repositoryColumn: "仓库",
-  reviewRelease: (repository) => `下载热度较高, 建议检查 ${repository} 的发布说明.`,
-  summary: (topRepoName, downloads, totalStars, numberLocale) => `${topRepoName} 今日仓库活动领先, 新增 ${downloads} 次下载, 已跟踪仓库累计 ${totalStars.toLocaleString(numberLocale)} 个 Stars.`,
+  reviewRelease: (repository) => `发布下载已有数据, 建议检查 ${repository} 的发布说明.`,
+  summary: (topRepoName, downloads, totalStars, numberLocale) => `${topRepoName} 发布下载量领先, 累计 ${downloads} 次下载, 已跟踪仓库累计 ${totalStars.toLocaleString(numberLocale)} 个 Stars.`,
   summaryHeading: "摘要",
   suggestedActionsHeading: "建议操作",
   syncReleaseAssets: "先同步发布资产, 再评估下载趋势.",
