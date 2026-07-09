@@ -130,8 +130,19 @@ export async function getReportGenerationData(): Promise<{ source: GitHubDataSou
 }
 
 export async function getRepositoryData(id: string): Promise<{ source: GitHubDataSource; repository?: RepositorySummary; repositories: RepositorySummary[] }> {
-  const { source, repositories } = await getRepositoryCollection({ includeMetrics: true });
-  return { source, repositories, repository: findRepository(repositories, id) };
+  const { config, source } = await readRuntimeSource();
+  const { repositories } = await getRepositoryCollection();
+  const repository = findRepository(repositories, id);
+  if (!repository || source.demo || source.mode !== "live") {
+    return { source, repositories, repository };
+  }
+
+  const [enrichedRepository] = await enrichRepositoriesWithLiveMetrics([repository], config);
+  return {
+    source,
+    repositories,
+    repository: enrichedRepository || repository
+  };
 }
 
 export async function getRepositoryReleaseAssets(repository: RepositorySummary): Promise<ReleaseAssetSummary[]> {
