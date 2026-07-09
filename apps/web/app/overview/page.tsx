@@ -115,7 +115,7 @@ export default async function OverviewPage() {
                 <div className="mt-1 truncate text-sm text-slate-500">{asset.assetName}</div>
                 <div className="mt-2 text-sm font-semibold text-teal-600">{formatCompactNumber(asset.totalDownloads, locale)} {t.common.downloads}</div>
               </div>
-            )) : <EmptyState title={t.common.noReleases} description={sourceDescription} />}
+            )) : <EmptyState title={t.common.noReleases} description={t.overview.noTopReleasesDescription} />}
           </div>
         </Card>
 
