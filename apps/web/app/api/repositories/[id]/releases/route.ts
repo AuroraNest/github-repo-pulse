@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { jsonError, jsonOk } from "../../../../../lib/api";
-import { getReleaseData, getRepositoryData, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
+import { getRepositoryData, getRepositoryReleaseAssets, isGitHubConfigurationRequired } from "../../../../../lib/data-source";
 
 type RouteContext = {
   params: Promise<{ id: string }> | { id: string };
@@ -17,9 +17,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return jsonError("NOT_FOUND", "Repository not found.", 404);
   }
 
-  const { assets } = await getReleaseData();
   return jsonOk({
     repository,
-    assets: assets.filter((asset) => asset.repositoryId === repository.id)
+    assets: await getRepositoryReleaseAssets(repository)
   });
 }
