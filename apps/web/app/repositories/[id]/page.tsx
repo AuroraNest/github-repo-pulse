@@ -1,7 +1,7 @@
 import { Download, ExternalLink, GitFork, Star, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Card, Chip, EmptyState } from "../../../components/ui";
-import { getReleaseData, getRepositoryData, getRepositoryReleaseAssets, getRepositoryTrafficData, isGitHubConfigurationRequired } from "../../../lib/data-source";
+import { getReleaseData, getRepositoryData, getRepositoryGrowthTrends, getRepositoryReleaseAssets, getRepositoryTrafficData, isGitHubConfigurationRequired } from "../../../lib/data-source";
 import { formatCompactNumber } from "../../../lib/format";
 import { translateVisibility, type Locale } from "../../../lib/i18n";
 import { getDictionary } from "../../../lib/locale";
@@ -18,9 +18,13 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
   const { locale, t } = await getDictionary();
   const { id } = await params;
   const { source, repository: repo } = await getRepositoryData(id);
-  const releaseData = source.demo ? await getReleaseData() : undefined;
-  const assets = repo ? source.demo ? releaseData?.assets.filter((asset) => asset.repositoryId === repo.id) || [] : await getRepositoryReleaseAssets(repo) : [];
-  const trafficData = repo ? await getRepositoryTrafficData(repo) : { trends: [], popularPaths: [], referrers: [] };
+  const [releaseData, liveAssets, trafficData, growthTrends] = repo ? await Promise.all([
+    source.demo ? getReleaseData() : Promise.resolve(undefined),
+    source.demo ? Promise.resolve([]) : getRepositoryReleaseAssets(repo),
+    getRepositoryTrafficData(repo),
+    getRepositoryGrowthTrends(repo)
+  ]) : [undefined, [], { trends: [], popularPaths: [], referrers: [] }, []];
+  const assets = source.demo ? releaseData?.assets.filter((asset) => asset.repositoryId === repo?.id) || [] : liveAssets;
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
 
   if (!repo) {
@@ -73,15 +77,15 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <RepoKpi label={t.repositoryDetail.kpis.stars} value={repo.stars} icon={Star} locale={locale} />
         <RepoKpi label={t.repositoryDetail.kpis.forks} value={repo.forks} icon={GitFork} locale={locale} />
-        <RepoKpi label={t.repositoryDetail.kpis.views14d} value={repo.visitors14d} icon={Users} locale={locale} />
-        <RepoKpi label={t.repositoryDetail.kpis.clones14d} value={repo.clones14d} icon={Users} locale={locale} />
+        <RepoKpi label={t.repositoryDetail.kpis.totalViews} value={repo.totalViews} icon={Users} locale={locale} />
+        <RepoKpi label={t.repositoryDetail.kpis.totalClones} value={repo.totalClones} icon={Users} locale={locale} />
         <RepoKpi label={t.repositoryDetail.kpis.totalDownloads} value={repo.totalDownloads} icon={Download} locale={locale} />
         <RepoKpi label={t.repositoryDetail.kpis.downloadsToday} value={repo.todayDownloads} icon={Download} locale={locale} />
       </div>
 
       <RepositoryDetailTabs
         assets={assets}
-        growthTrends={source.demo ? releaseData?.overview.growthTrends || [] : []}
+        growthTrends={growthTrends}
         labels={{
           clones: t.common.clones,
           downloads: t.common.downloads,
@@ -95,10 +99,10 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
           popularContent: t.repositoryDetail.popularContent,
           releasePageViews: t.repositoryDetail.releasePageViews,
           releases: t.repositoryDetail.releases,
+          cumulativeDownloads: t.repositoryDetail.cumulativeDownloads,
           stars: t.common.stars,
           tabs: t.repositoryDetail.tabs,
           trafficSubtitle: t.repositoryDetail.trafficSubtitle,
-          visitors: t.repositoryDetail.visitors,
           views: t.common.views,
           viewsVsClones: t.overview.viewsVsClones
         }}

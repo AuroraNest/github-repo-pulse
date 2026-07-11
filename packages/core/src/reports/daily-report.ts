@@ -21,7 +21,7 @@ export function generateDailyReport(input: GenerateDailyReportInput): ReportData
   const highlights = [
     topAsset ? copy.assetDownloads(topAsset.assetName, topAsset.totalDownloads) : copy.noReleaseData,
     copy.trackedRepositories(input.overview.kpis.trackedRepositories),
-    copy.visitors(input.overview.kpis.visitors14d, numberLocale)
+    copy.views(input.overview.kpis.totalViews, numberLocale)
   ];
   const anomalies = input.repositories
     .filter((repo) => repo.status !== "healthy")
@@ -33,9 +33,9 @@ export function generateDailyReport(input: GenerateDailyReportInput): ReportData
   ];
   const kpis = [
     { label: copy.totalDownloads, value: input.overview.kpis.totalDownloads.toLocaleString(numberLocale), change: copy.todayChange(input.overview.kpis.downloadsToday) },
-    { label: copy.totalStars, value: input.overview.kpis.totalStars.toLocaleString(numberLocale), change: "+3.8%" },
-    { label: copy.totalForks, value: input.overview.kpis.totalForks.toLocaleString(numberLocale), change: "+2.1%" },
-    { label: copy.visitors14d, value: input.overview.kpis.visitors14d.toLocaleString(numberLocale), change: "+9.1%" }
+    { label: copy.totalStars, value: input.overview.kpis.totalStars.toLocaleString(numberLocale), change: copy.baseline },
+    { label: copy.totalForks, value: input.overview.kpis.totalForks.toLocaleString(numberLocale), change: copy.baseline },
+    { label: copy.totalViews, value: input.overview.kpis.totalViews.toLocaleString(numberLocale), change: copy.baseline }
   ];
   const fastestMovers = input.overview.fastestGrowingRepositories.map((repo) => ({
     repository: repo.name,
@@ -109,10 +109,10 @@ ${suggestedActions.map((item) => `- ${item}`).join("\n")}
 }
 
 type ReportCopy = {
+  baseline: string;
   anomaliesHeading: string;
   assetColumn: string;
   assetDownloads: (assetName: string, downloads: number) => string;
-  baseline: string;
   changeColumn: string;
   checkTrafficWarnings: string;
   downloadsColumn: string;
@@ -138,18 +138,18 @@ type ReportCopy = {
   totalDownloads: string;
   totalForks: string;
   totalStars: string;
+  totalViews: string;
   trackedRepositories: (count: number) => string;
   useFavorites: string;
   valueColumn: string;
-  visitors: (count: number, numberLocale: string) => string;
-  visitors14d: string;
+  views: (count: number, numberLocale: string) => string;
 };
 
 const enCopy: ReportCopy = {
+  baseline: "Baseline",
   anomaliesHeading: "Anomalies",
   assetColumn: "Asset",
   assetDownloads: (assetName, downloads) => `${assetName} has ${downloads} total downloads.`,
-  baseline: "Baseline",
   changeColumn: "Change",
   checkTrafficWarnings: "Check repositories with traffic permission warnings before the next scheduled sync.",
   downloadsColumn: "Downloads",
@@ -175,18 +175,18 @@ const enCopy: ReportCopy = {
   totalDownloads: "Total Downloads",
   totalForks: "Total Forks",
   totalStars: "Total Stars",
+  totalViews: "Cumulative Views",
   trackedRepositories: (count) => `${count} repositories are currently tracked.`,
   useFavorites: "Use favorites to pin the repositories that should appear first in daily reviews.",
   valueColumn: "Value",
-  visitors: (count, numberLocale) => `${count.toLocaleString(numberLocale)} aggregated 14-day unique visitors were observed across tracked repositories.`,
-  visitors14d: "14-Day Visitors"
+  views: (count, numberLocale) => `${count.toLocaleString(numberLocale)} cumulative persisted views were observed across tracked repositories.`
 };
 
 const zhCopy: ReportCopy = {
+  baseline: "基线",
   anomaliesHeading: "异常",
   assetColumn: "资产",
   assetDownloads: (assetName, downloads) => `${assetName} 累计 ${downloads} 次下载.`,
-  baseline: "基线",
   changeColumn: "变化",
   checkTrafficWarnings: "下次计划同步前检查存在流量权限告警的仓库.",
   downloadsColumn: "下载量",
@@ -212,9 +212,9 @@ const zhCopy: ReportCopy = {
   totalDownloads: "总下载量",
   totalForks: "总 Forks",
   totalStars: "总 Stars",
+  totalViews: "累计浏览",
   trackedRepositories: (count) => `当前已跟踪 ${count} 个仓库.`,
   useFavorites: "使用收藏固定每日巡检时优先查看的仓库.",
   valueColumn: "值",
-  visitors: (count, numberLocale) => `已跟踪仓库近 14 天累计 ${count.toLocaleString(numberLocale)} 个独立访客.`,
-  visitors14d: "14 天访客"
+  views: (count, numberLocale) => `已跟踪仓库累计持久化浏览量 ${count.toLocaleString(numberLocale)} 次.`
 };

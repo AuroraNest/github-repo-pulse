@@ -127,6 +127,8 @@ export async function listAccessibleRepositories(options: GitHubClientOptions): 
     primaryLanguage: repo.language || "Unknown",
     stars: repo.stargazers_count || 0,
     forks: repo.forks_count || 0,
+    totalViews: 0,
+    totalClones: 0,
     visitors14d: 0,
     clones14d: 0,
     totalDownloads: 0,
@@ -163,7 +165,7 @@ export async function listRepositoriesWithTrafficCounts(repositories: Repository
       }).catch(() => null)
     ]);
 
-    for (const point of readTrafficSeries(views?.data, "views", "uniques")) {
+    for (const point of readTrafficSeries(views?.data, "views", "count")) {
       const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
       dailyTraffic.set(point.date, { ...current, views: current.views + point.value });
     }
@@ -223,7 +225,7 @@ export async function getRepositoryTrafficDetails(repository: RepositorySummary,
   const dailyTraffic = new Map<string, { views: number; clones: number }>();
   for (const point of daily.filter((item) => item.metric === "views")) {
     const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };
-    dailyTraffic.set(point.date, { ...current, views: current.views + point.uniques });
+    dailyTraffic.set(point.date, { ...current, views: current.views + point.count });
   }
   for (const point of daily.filter((item) => item.metric === "clones")) {
     const current = dailyTraffic.get(point.date) || { views: 0, clones: 0 };

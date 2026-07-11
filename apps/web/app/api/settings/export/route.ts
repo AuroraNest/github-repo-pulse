@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
     language: repo.primaryLanguage,
     stars: repo.stars,
     forks: repo.forks,
-    visitors14d: repo.visitors14d,
-    clones14d: repo.clones14d,
+    totalViews: repo.totalViews,
+    totalClones: repo.totalClones,
     totalDownloads: repo.totalDownloads,
     todayDownloads: repo.todayDownloads,
     latestRelease: repo.latestRelease,
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 }
 
 function toCsv(rows: Array<Record<string, string | number | boolean>>) {
-  const headers = ["repository", "tracked", "favorite", "visibility", "language", "stars", "forks", "visitors14d", "clones14d", "totalDownloads", "todayDownloads", "latestRelease", "lastSyncAt", "status", "dataMode"];
+  const headers = ["repository", "tracked", "favorite", "visibility", "language", "stars", "forks", "totalViews", "totalClones", "totalDownloads", "todayDownloads", "latestRelease", "lastSyncAt", "status", "dataMode"];
   const lines = [
     headers.join(","),
     ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(","))

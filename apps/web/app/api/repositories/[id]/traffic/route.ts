@@ -30,8 +30,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     popularPaths: traffic.popularPaths,
     referrers: traffic.referrers,
     conversion: source.demo ? {
-      visitors: repository.visitors14d,
-      releasePageViews: Math.round(repository.visitors14d * 0.28),
+      views: repository.totalViews,
+      releasePageViews: Math.round(repository.totalViews * 0.28),
       downloads: repository.todayDownloads * 7
     } : null
   });

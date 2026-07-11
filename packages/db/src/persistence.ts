@@ -130,6 +130,12 @@ type TrafficDailyTrendRow = RowDataPacket & {
   uniques: number;
 };
 
+type RepositoryTrafficTotalRow = RowDataPacket & {
+  repository_id: string;
+  metric: "views" | "clones";
+  total_count: number | string | null;
+};
+
 export type PersistedReport = {
   id: string;
   type: "daily" | "weekly" | "monthly";
@@ -233,6 +239,11 @@ export type SnapshotTrendPoint = {
   downloads: number;
   views: number;
   clones: number;
+};
+
+export type RepositoryTrafficTotals = {
+  totalViews: number;
+  totalClones: number;
 };
 
 export function defaultAppSettings(): AppSettings {
@@ -640,7 +651,7 @@ export async function readTrafficDailyTrends(repositoryIds: string[], days = 30)
       const date = rowDateToDateOnly(row.traffic_date);
       const current = byDate.get(date) || { date, stars: 0, forks: 0, downloads: 0, views: 0, clones: 0 };
       if (row.metric === "views") {
-        current.views = Number(row.uniques) || 0;
+        current.views = Number(row.count) || 0;
       } else {
         current.clones = Number(row.count) || 0;
       }
@@ -648,6 +659,38 @@ export async function readTrafficDailyTrends(repositoryIds: string[], days = 30)
     }
 
     return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function readRepositoryTrafficTotals(repositoryIds: string[]): Promise<Map<string, RepositoryTrafficTotals>> {
+  if (repositoryIds.length === 0) return new Map();
+
+  const pool = await createPool();
+  const placeholders = repositoryIds.map(() => "?").join(", ");
+  try {
+    const [rows] = await pool.query<RepositoryTrafficTotalRow[]>(
+      `SELECT repository_id, metric, SUM(count) AS total_count
+       FROM traffic_daily
+       WHERE repository_id IN (${placeholders})
+       GROUP BY repository_id, metric`,
+      repositoryIds
+    );
+
+    const totals = new Map<string, RepositoryTrafficTotals>();
+    for (const row of rows) {
+      const current = totals.get(row.repository_id) || { totalViews: 0, totalClones: 0 };
+      const total = Number(row.total_count) || 0;
+      if (row.metric === "views") {
+        current.totalViews = total;
+      } else {
+        current.totalClones = total;
+      }
+      totals.set(row.repository_id, current);
+    }
+
+    return totals;
   } finally {
     await pool.end();
   }

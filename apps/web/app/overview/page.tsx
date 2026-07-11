@@ -18,8 +18,8 @@ export default async function OverviewPage() {
     { label: t.overview.kpis.totalForks, value: overview.kpis.totalForks, change: source.demo ? "+2.1%" : "+0", icon: GitFork, tone: "text-violet-500 bg-violet-50" },
     { label: t.overview.kpis.totalDownloads, value: overview.kpis.totalDownloads, change: source.demo ? "+8.4%" : "+0", icon: Download, tone: "text-teal-500 bg-teal-50" },
     { label: t.overview.kpis.downloadsToday, value: overview.kpis.downloadsToday, change: source.demo ? "+225" : "+0", icon: Workflow, tone: "text-blue-500 bg-blue-50" },
-    { label: t.overview.kpis.visitors14d, value: overview.kpis.visitors14d, change: source.demo ? "+9.1%" : "+0", icon: Users, tone: "text-pink-500 bg-pink-50" },
-    { label: t.overview.kpis.clones14d, value: overview.kpis.clones14d, change: source.demo ? "+4.7%" : "+0", icon: Eye, tone: "text-slate-500 bg-slate-100" }
+    { label: t.overview.kpis.totalViews, value: overview.kpis.totalViews, change: source.demo ? "+9.1%" : "+0", icon: Users, tone: "text-pink-500 bg-pink-50" },
+    { label: t.overview.kpis.totalClones, value: overview.kpis.totalClones, change: source.demo ? "+4.7%" : "+0", icon: Eye, tone: "text-slate-500 bg-slate-100" }
   ];
 
   return (

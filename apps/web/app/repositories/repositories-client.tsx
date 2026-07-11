@@ -204,8 +204,8 @@ export function RepositoriesClient({
                 <td className="px-3 py-4">{repo.primaryLanguage}</td>
                 <td className="px-3 py-4"><Metric icon={Star} value={repo.stars} locale={locale} /></td>
                 <td className="px-3 py-4"><Metric icon={GitFork} value={repo.forks} locale={locale} /></td>
-                <td className="px-3 py-4"><Metric icon={Eye} value={repo.visitors14d} locale={locale} /></td>
-                <td className="px-3 py-4">{formatCompactNumber(repo.clones14d, locale)}</td>
+                <td className="px-3 py-4"><Metric icon={Eye} value={repo.totalViews} locale={locale} /></td>
+                <td className="px-3 py-4">{formatCompactNumber(repo.totalClones, locale)}</td>
                 <td className="px-3 py-4">{formatCompactNumber(repo.totalDownloads, locale)}</td>
                 <td className="px-3 py-4">{formatSyncState(repo.latestRelease, locale)}</td>
                 <td className="px-3 py-4">{formatDate(repo.lastSyncAt, locale)}</td>

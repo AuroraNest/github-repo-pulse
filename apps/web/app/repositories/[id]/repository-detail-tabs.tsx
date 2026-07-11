@@ -11,6 +11,7 @@ type DetailTabKey = "overview" | "traffic" | "releases" | "reports" | "settings"
 
 type Labels = {
   clones: string;
+  cumulativeDownloads: string;
   downloads: string;
   forks: string;
   funnelSubtitle: string;
@@ -25,7 +26,6 @@ type Labels = {
   stars: string;
   tabs: readonly string[];
   trafficSubtitle: string;
-  visitors: string;
   views: string;
   viewsVsClones: string;
 };
@@ -115,9 +115,9 @@ export function RepositoryDetailTabs({
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {assets.length > 0 ? assets.map((asset) => (
               <div key={asset.id} className="rounded-lg border border-slate-100 p-3">
-                <div className="font-medium">{asset.tagName}</div>
-                <div className="truncate text-sm text-slate-500">{asset.assetName}</div>
-                <div className="mt-2 text-sm font-semibold">{formatCompactNumber(asset.totalDownloads, locale)} {labels.downloads}</div>
+                <div className="truncate font-medium" title={asset.assetName}>{asset.assetName}</div>
+                <div className="mt-1 truncate text-sm text-slate-500">{asset.repository} / {asset.tagName}</div>
+                <div className="mt-2 text-sm font-semibold">{labels.cumulativeDownloads}: {formatCompactNumber(asset.totalDownloads, locale)}</div>
               </div>
             )) : <EmptyState title={labels.noReleases} description={sourceDescription} />}
           </div>
@@ -134,8 +134,8 @@ function FunnelCard({ labels, locale, repo }: { labels: Labels; locale: Locale; 
     <Card>
       <SectionTitle title={labels.funnelTitle} subtitle={labels.funnelSubtitle} />
       <div className="mt-5 space-y-3">
-        <FunnelRow label={labels.visitors} value={repo.visitors14d} locale={locale} />
-        <FunnelRow label={labels.releasePageViews} value={Math.round(repo.visitors14d * 0.28)} locale={locale} />
+        <FunnelRow label={labels.views} value={repo.totalViews} locale={locale} />
+        <FunnelRow label={labels.releasePageViews} value={Math.round(repo.totalViews * 0.28)} locale={locale} />
         <FunnelRow label={labels.downloads} value={repo.todayDownloads * 7} locale={locale} />
       </div>
     </Card>

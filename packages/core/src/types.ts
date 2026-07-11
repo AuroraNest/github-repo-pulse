@@ -14,6 +14,8 @@ export type RepositorySummary = {
   primaryLanguage: string;
   stars: number;
   forks: number;
+  totalViews: number;
+  totalClones: number;
   visitors14d: number;
   clones14d: number;
   totalDownloads: number;
@@ -85,8 +87,8 @@ export type OverviewData = {
     totalForks: number;
     totalDownloads: number;
     downloadsToday: number;
-    visitors14d: number;
-    clones14d: number;
+    totalViews: number;
+    totalClones: number;
     trackedRepositories: number;
   };
   growthTrends: TrendPoint[];

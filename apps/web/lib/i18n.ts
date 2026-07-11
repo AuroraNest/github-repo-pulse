@@ -115,8 +115,8 @@ export const dictionary = {
         totalForks: "Total Forks",
         totalDownloads: "Total Downloads",
         downloadsToday: "Today's New Downloads",
-        visitors14d: "14-Day Visitors",
-        clones14d: "14-Day Clones"
+        totalViews: "Cumulative Views",
+        totalClones: "Cumulative Clones"
       },
       vsPrevious: "vs previous period",
       growthTitle: "30-Day Growth Trends",
@@ -124,7 +124,7 @@ export const dictionary = {
       historyRequiredDescription: "Growth trends need stored daily snapshots. Live GitHub does not provide historical stars, forks, or download deltas.",
       last30Days: "Last 30 days",
       viewsVsClones: "Views vs Clones",
-      viewsVsClonesSubtitle: "GitHub traffic window values by day.",
+      viewsVsClonesSubtitle: "Daily traffic counts; live fallback uses GitHub's current traffic window.",
       aggregated: "Aggregated",
       fastestGrowing: "Top Repositories by Stars",
       topReleases: "Top Releases",
@@ -143,7 +143,7 @@ export const dictionary = {
       fastestGrowing: "Fastest Growing",
       tabs: ["All", "Active", "Private", "Public", "Favorites"],
       filters: ["Language", "Growth", "Traffic", "Release Enabled", "More filters"],
-      columns: ["Repository", "Visibility", "Language", "Stars", "Forks", "14-Day Visitors", "14-Day Clones", "Total Downloads", "Latest Release", "Last Sync", "Status", "Actions"],
+      columns: ["Repository", "Visibility", "Language", "Stars", "Forks", "Cumulative Views", "Cumulative Clones", "Total Downloads", "Latest Release", "Last Sync", "Status", "Actions"],
       favorite: "Favorite",
       noMatchingRepositories: "No repositories match the current filters.",
       pauseTracking: "Pause",
@@ -160,14 +160,14 @@ export const dictionary = {
       kpis: {
         stars: "Stars",
         forks: "Forks",
-        views14d: "14-Day Views",
-        clones14d: "14-Day Clones",
+        totalViews: "Cumulative Views",
+        totalClones: "Cumulative Clones",
         totalDownloads: "Total Release Downloads",
         downloadsToday: "Today's New Downloads"
       },
       tabs: ["Overview", "Traffic", "Releases", "Reports", "Settings"],
       growthTitle: "90-Day Growth Trends",
-      growthSubtitle: "Views, clones, downloads, stars, and forks.",
+      growthSubtitle: "Persisted views, clones, downloads, stars, and forks.",
       trafficSubtitle: "GitHub traffic collection may be partial if token permissions are limited.",
       funnelTitle: "Conversion Funnel",
       funnelSubtitle: "Shown when repository traffic and release activity are available.",
@@ -175,7 +175,8 @@ export const dictionary = {
       releasePageViews: "Release Page Views",
       downloads: "Downloads",
       popularContent: "Popular Content",
-      releases: "Releases"
+      releases: "Releases",
+      cumulativeDownloads: "Cumulative Downloads"
     },
     releases: {
       title: "Releases / Downloads",
@@ -370,8 +371,8 @@ export const dictionary = {
         totalForks: "总 Forks",
         totalDownloads: "总下载量",
         downloadsToday: "今日新增下载",
-        visitors14d: "14 天访客",
-        clones14d: "14 天克隆"
+        totalViews: "累计浏览",
+        totalClones: "累计克隆"
       },
       vsPrevious: "较上一周期",
       growthTitle: "30 天增长趋势",
@@ -379,7 +380,7 @@ export const dictionary = {
       historyRequiredDescription: "增长趋势需要每日快照历史. GitHub 实时 API 不提供历史 Stars, Forks 或下载差分.",
       last30Days: "最近 30 天",
       viewsVsClones: "浏览 vs 克隆",
-      viewsVsClonesSubtitle: "GitHub 流量窗口的每日数值.",
+      viewsVsClonesSubtitle: "每日 traffic 计数; 实时兜底使用 GitHub 当前 traffic 窗口.",
       aggregated: "聚合",
       fastestGrowing: "Stars 领先仓库",
       topReleases: "热门发布",
@@ -398,7 +399,7 @@ export const dictionary = {
       fastestGrowing: "增长最快",
       tabs: ["全部", "活跃", "私有", "公开", "收藏"],
       filters: ["语言", "增长", "流量", "已启用发布", "更多筛选"],
-      columns: ["仓库", "可见性", "语言", "Stars", "Forks", "14 天访客", "14 天克隆", "总下载量", "最新发布", "上次同步", "状态", "操作"],
+      columns: ["仓库", "可见性", "语言", "Stars", "Forks", "累计浏览", "累计克隆", "总下载量", "最新发布", "上次同步", "状态", "操作"],
       favorite: "收藏",
       noMatchingRepositories: "没有仓库符合当前筛选.",
       pauseTracking: "暂停",
@@ -415,14 +416,14 @@ export const dictionary = {
       kpis: {
         stars: "Stars",
         forks: "Forks",
-        views14d: "14 天浏览",
-        clones14d: "14 天克隆",
+        totalViews: "累计浏览",
+        totalClones: "累计克隆",
         totalDownloads: "发布总下载量",
         downloadsToday: "今日新增下载"
       },
       tabs: ["总览", "流量", "发布", "报告", "设置"],
       growthTitle: "90 天增长趋势",
-      growthSubtitle: "浏览, 克隆, 下载, stars 和 forks.",
+      growthSubtitle: "持久化浏览, 克隆, 下载, stars 和 forks.",
       trafficSubtitle: "如果 token 权限受限, GitHub traffic 采集可能不完整.",
       funnelTitle: "转化漏斗",
       funnelSubtitle: "当仓库 traffic 和发布活动数据可用时显示.",
@@ -430,7 +431,8 @@ export const dictionary = {
       releasePageViews: "发布页浏览",
       downloads: "下载",
       popularContent: "热门内容",
-      releases: "发布"
+      releases: "发布",
+      cumulativeDownloads: "累计下载"
     },
     releases: {
       title: "发布 / 下载",
