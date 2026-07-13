@@ -12,6 +12,8 @@
   "dependencies": {
     "@repopulse/core": "workspace:*",
     "@repopulse/db": "workspace:*",
+    "dotenv": "^16.6.1",
+    "node-cron": "^4.6.0",
     "tsx": "^4.20.0"
   },
   "devDependencies": {

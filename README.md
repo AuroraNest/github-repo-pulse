@@ -13,7 +13,7 @@ RepoPulse is a self-hosted GitHub analytics dashboard for repository growth, rel
 ### What it includes
 
 - `apps/web`: Next.js TypeScript app with Tailwind UI, API routes, runtime English/Chinese switching, and explicit demo-data mode.
-- `apps/worker`: Node.js worker skeleton for scheduled and manual sync jobs.
+- `apps/worker`: Node.js worker for scheduled and manual sync jobs. It reads the cron expression and timezone from MySQL, uses the stored GitHub connection, and persists repository snapshots.
 - `packages/core`: shared contracts, mock data, GitHub collector skeleton, metrics, and report helpers.
 - `packages/db`: MySQL-first schema, migration, and client helpers.
 
@@ -23,6 +23,7 @@ RepoPulse is a self-hosted GitHub analytics dashboard for repository growth, rel
 pnpm install
 cp .env.example .env.local
 pnpm dev:web
+pnpm dev:worker
 ```
 
 `GITHUB_TOKEN` may stay empty for local UI smoke testing. By default, missing GitHub configuration shows a clear configuration-required empty state instead of demo repositories, KPIs, releases, or reports.
@@ -60,6 +61,8 @@ The compose stack starts:
 - `worker`: RepoPulse worker process
 - `mysql`: local MySQL database with the `mysql_data` Docker volume
 
+The worker automatically schedules one sync from `app_settings.sync_cron` and `app_settings.sync_timezone`. The default is `0 8 * * *` in `UTC`; change it in Settings. Only run one worker replica for a self-hosted instance.
+
 Default login:
 
 - Email: `admin@local.com`
@@ -94,7 +97,7 @@ RepoPulse 是一个自托管 GitHub 数据分析看板, 用于查看仓库增长
 ### 包含内容
 
 - `apps/web`: Next.js TypeScript 应用, 包含 Tailwind UI, API routes, 运行时语言切换和显式 demo data 模式.
-- `apps/worker`: 用于定时和手动同步任务的 Node.js worker 骨架.
+- `apps/worker`: 用于定时和手动同步任务的 Node.js worker.它从 MySQL 读取 cron 和时区, 使用已保存的 GitHub 连接, 并持久化仓库快照.
 - `packages/core`: 共享 contracts, mock data, GitHub collector 骨架, metrics 和 report helpers.
 - `packages/db`: MySQL 优先的 schema, migration 和 client helpers.
 
@@ -104,6 +107,7 @@ RepoPulse 是一个自托管 GitHub 数据分析看板, 用于查看仓库增长
 pnpm install
 cp .env.example .env.local
 pnpm dev:web
+pnpm dev:worker
 ```
 
 `GITHUB_TOKEN` 可以在本地 UI smoke 测试时保持为空.默认缺少 GitHub 配置时, RepoPulse 会显示明确的配置必需空态, 不显示 demo 仓库, KPI, release 或 report.
@@ -140,6 +144,8 @@ Compose stack 会启动:
 - `web`: Next.js 看板, 访问 `http://localhost:3000`
 - `worker`: RepoPulse worker 进程
 - `mysql`: 本地 MySQL 数据库, 数据存放在 `mysql_data` Docker volume
+
+worker 会根据 `app_settings.sync_cron` 和 `app_settings.sync_timezone` 自动调度一次同步.默认是 `UTC` 时区的 `0 8 * * *`, 可以在设置页修改.单个自托管实例只应运行一个 worker 副本.
 
 默认登录:
 

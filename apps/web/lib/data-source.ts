@@ -21,6 +21,7 @@ import {
 import { readLatestRepositorySnapshots, readReleaseAssetDeltas, readRepositorySnapshotTrends, readRepositoryTrafficTotals, readReports, readSyncRuns, readTrafficDailyTrends } from "@repopulse/db";
 import { readGitHubRuntimeConfig } from "./runtime-github-token";
 import { applyRuntimeSetupState, getSetupState } from "./runtime-setup-state";
+import { unstable_cache } from "next/cache";
 
 export type GitHubDataMode = "configuration_required" | "demo" | "live";
 
@@ -32,6 +33,14 @@ export type GitHubDataSource = {
 };
 
 export const githubConfigurationRequiredMessage = "Configure GITHUB_TOKEN for live GitHub data, or set MOCK_GITHUB=true to enable demo data.";
+
+const githubRepositoryCacheTag = "github-repositories";
+
+const readCachedAccessibleRepositories = unstable_cache(
+  async (token: string, baseUrl: string) => listAccessibleRepositories({ token, baseUrl, mock: false }),
+  ["github-accessible-repositories"],
+  { revalidate: 60 * 60, tags: [githubRepositoryCacheTag] }
+);
 
 type RuntimeSource = {
   config: RuntimeConfig;
@@ -55,11 +64,9 @@ export async function getRepositoryCollection(options: RepositoryCollectionOptio
   }
 
   try {
-    const repositories = await listAccessibleRepositories({
-      token: config.githubToken,
-      baseUrl: config.githubApiBaseUrl,
-      mock: source.demo
-    });
+    const repositories = source.demo
+      ? await listAccessibleRepositories({ token: config.githubToken, baseUrl: config.githubApiBaseUrl, mock: true })
+      : await readCachedAccessibleRepositories(config.githubToken || "", config.githubApiBaseUrl);
 
     const setupRepositories = applyRuntimeSetupState(repositories, await getSetupState());
     if (!options.includeMetrics || source.demo) {
@@ -265,6 +272,8 @@ export function githubDataSourcePayload(source: GitHubDataSource) {
     message: source.message
   };
 }
+
+export { githubRepositoryCacheTag };
 
 async function readRuntimeSource(): Promise<RuntimeSource> {
   const config = await readGitHubRuntimeConfig();

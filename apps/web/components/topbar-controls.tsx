@@ -28,10 +28,15 @@ export function TopbarControls({ labels, status }: TopbarControlsProps) {
     router.push(value ? `/repositories?search=${encodeURIComponent(value)}` : "/repositories");
   }
 
-  function refreshData() {
+  async function refreshData() {
+    if (refreshing) return;
     setRefreshing(true);
-    router.refresh();
-    window.setTimeout(() => setRefreshing(false), 500);
+    try {
+      await fetch("/api/cache/refresh", { method: "POST", cache: "no-store" });
+    } finally {
+      router.refresh();
+      window.setTimeout(() => setRefreshing(false), 500);
+    }
   }
 
   return (
