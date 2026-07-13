@@ -18,6 +18,7 @@ type Labels = {
   funnelTitle: string;
   growthSubtitle: string;
   growthTitle: string;
+  historyRequiredDescription: string;
   noDataYet: string;
   noReleases: string;
   popularContent: string;
@@ -80,7 +81,7 @@ export function RepositoryDetailTabs({
           <Card>
             <SectionTitle title={labels.growthTitle} subtitle={labels.growthSubtitle} />
             <div className="mt-4">
-              {growthTrends.length > 0 ? <GrowthChart data={growthTrends} labels={{ stars: labels.stars, forks: labels.forks, downloads: labels.downloads }} /> : <EmptyState title={labels.noDataYet} description={sourceDescription} />}
+              {growthTrends.length >= 2 ? <GrowthChart data={growthTrends} labels={{ stars: labels.stars, forks: labels.forks, downloads: labels.downloads }} /> : <EmptyState title={labels.noDataYet} description={labels.historyRequiredDescription} />}
             </div>
           </Card>
           {useDemoContent ? <FunnelCard labels={labels} locale={locale} repo={repo} /> : <EmptyState title={labels.noDataYet} description={sourceDescription} />}

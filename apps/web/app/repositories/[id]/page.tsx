@@ -93,6 +93,7 @@ export default async function RepositoryDetailPage({ params }: PageProps) {
           funnelSubtitle: t.repositoryDetail.funnelSubtitle,
           funnelTitle: t.repositoryDetail.funnelTitle,
           growthSubtitle: t.repositoryDetail.growthSubtitle,
+          historyRequiredDescription: t.overview.historyRequiredDescription,
           growthTitle: t.repositoryDetail.growthTitle,
           noDataYet: t.common.noDataYet,
           noReleases: t.common.noReleases,

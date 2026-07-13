@@ -3,6 +3,7 @@
 import type { ApiResponse, RepositorySummary, RepositorySyncResult } from "@repopulse/core";
 import { BarChart3, Eye, GitFork, Github, PauseCircle, PlayCircle, RefreshCw, Star, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type ReactNode, useMemo, useState } from "react";
 import { Card, Chip, EmptyState } from "../../components/ui";
 import { formatCompactNumber, formatDate, formatSyncState } from "../../lib/format";
@@ -52,6 +53,7 @@ export function RepositoriesClient({
   locale: Locale;
   sourceDescription: string;
 }) {
+  const router = useRouter();
   const [repositories, setRepositories] = useState(initialRepositories);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [query, setQuery] = useState(initialQuery || "");
@@ -187,7 +189,19 @@ export function RepositoriesClient({
           </thead>
           <tbody>
             {visibleRepositories.map((repo) => (
-              <tr key={repo.id} className="border-b border-slate-100">
+              <tr
+                key={repo.id}
+                className="cursor-pointer border-b border-slate-100 hover:bg-slate-50"
+                onClick={() => router.push(`/repositories/${repo.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    router.push(`/repositories/${repo.id}`);
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+              >
                 <td className="px-3 py-4">
                   <Link href={`/repositories/${repo.id}`} className="flex items-center gap-3">
                     <Github size={18} className="text-slate-500" />
@@ -212,23 +226,23 @@ export function RepositoriesClient({
                 <td className="px-3 py-4"><TableBadge tone={repo.status === "warning" ? "yellow" : repo.status === "error" ? "red" : "green"}>{translateStatus(repo.status, locale)}</TableBadge></td>
                 <td className="px-3 py-4 align-middle">
                   <div className="flex min-w-[208px] items-center justify-end gap-1.5">
-                    <Link aria-label={labels.view} href={`/repositories/${repo.id}`} title={labels.view} className={actionClass("primary")}>
+                    <Link aria-label={labels.view} href={`/repositories/${repo.id}`} title={labels.view} className={actionClass("primary")} onClick={(event) => event.stopPropagation()}>
                       <Eye size={14} />
                       <span className="sr-only">{labels.view}</span>
                     </Link>
-                    <button aria-label={labels.syncNow} title={labels.syncNow} className={actionClass()} disabled={busy !== null} onClick={() => syncRepository(repo)} type="button">
+                    <button aria-label={labels.syncNow} title={labels.syncNow} className={actionClass()} disabled={busy !== null} onClick={(event) => { event.stopPropagation(); syncRepository(repo); }} type="button">
                       <RefreshCw className={busy === `${repo.id}-sync` ? "animate-spin" : ""} size={14} />
                       <span className="sr-only">{busy === `${repo.id}-sync` ? labels.working : labels.syncNow}</span>
                     </button>
-                    <button aria-label={repo.tracked ? labels.pauseTracking : labels.resumeTracking} title={repo.tracked ? labels.pauseTracking : labels.resumeTracking} className={actionClass()} disabled={busy !== null} onClick={() => patchRepository(repo, { tracked: !repo.tracked }, "tracked")} type="button">
+                    <button aria-label={repo.tracked ? labels.pauseTracking : labels.resumeTracking} title={repo.tracked ? labels.pauseTracking : labels.resumeTracking} className={actionClass()} disabled={busy !== null} onClick={(event) => { event.stopPropagation(); patchRepository(repo, { tracked: !repo.tracked }, "tracked"); }} type="button">
                       {repo.tracked ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
                       <span className="sr-only">{repo.tracked ? labels.pauseTracking : labels.resumeTracking}</span>
                     </button>
-                    <button aria-label={repo.favorite ? labels.unfavorite : labels.favorite} title={repo.favorite ? labels.unfavorite : labels.favorite} className={actionClass()} disabled={busy !== null} onClick={() => patchRepository(repo, { favorite: !repo.favorite }, "favorite")} type="button">
+                    <button aria-label={repo.favorite ? labels.unfavorite : labels.favorite} title={repo.favorite ? labels.unfavorite : labels.favorite} className={actionClass()} disabled={busy !== null} onClick={(event) => { event.stopPropagation(); patchRepository(repo, { favorite: !repo.favorite }, "favorite"); }} type="button">
                       <Star className={repo.favorite ? "fill-amber-400 text-amber-400" : ""} size={14} />
                       <span className="sr-only">{repo.favorite ? labels.unfavorite : labels.favorite}</span>
                     </button>
-                    <Link aria-label={labels.reports} href="/reports" title={labels.reports} className={actionClass()}>
+                    <Link aria-label={labels.reports} href="/reports" title={labels.reports} className={actionClass()} onClick={(event) => event.stopPropagation()}>
                       <BarChart3 size={14} />
                       <span className="sr-only">{labels.reports}</span>
                     </Link>

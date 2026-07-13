@@ -18,7 +18,7 @@ import {
   type SyncRun,
   type TrendPoint
 } from "@repopulse/core";
-import { readReleaseAssetDeltas, readRepositorySnapshotTrends, readRepositoryTrafficTotals, readReports, readSyncRuns, readTrafficDailyTrends } from "@repopulse/db";
+import { readLatestRepositorySnapshots, readReleaseAssetDeltas, readRepositorySnapshotTrends, readRepositoryTrafficTotals, readReports, readSyncRuns, readTrafficDailyTrends } from "@repopulse/db";
 import { readGitHubRuntimeConfig } from "./runtime-github-token";
 import { applyRuntimeSetupState, getSetupState } from "./runtime-setup-state";
 
@@ -40,6 +40,7 @@ type RuntimeSource = {
 
 type RepositoryCollectionOptions = {
   includeMetrics?: boolean;
+  includeStoredMetrics?: boolean;
 };
 
 export async function getGitHubDataSource(): Promise<GitHubDataSource> {
@@ -62,7 +63,10 @@ export async function getRepositoryCollection(options: RepositoryCollectionOptio
 
     const setupRepositories = applyRuntimeSetupState(repositories, await getSetupState());
     if (!options.includeMetrics || source.demo) {
-      return { source, repositories: setupRepositories };
+      const storedRepositories = options.includeStoredMetrics && !source.demo
+        ? await enrichRepositoriesWithStoredMetrics(setupRepositories)
+        : setupRepositories;
+      return { source, repositories: storedRepositories };
     }
 
     return { source, repositories: await enrichRepositoriesWithLiveMetrics(setupRepositories, config) };
@@ -377,6 +381,26 @@ async function enrichRepositoriesWithLiveMetrics(repositories: RepositorySummary
     totalDownloads: releaseByRepository.get(repository.id)?.totalDownloads || repository.totalDownloads,
     todayDownloads: releaseByRepository.get(repository.id)?.todayDownloads || repository.todayDownloads
   }));
+}
+
+async function enrichRepositoriesWithStoredMetrics(repositories: RepositorySummary[]) {
+  const [trafficTotals, snapshots] = await Promise.all([
+    readRepositoryTrafficTotals(repositories.map((repository) => repository.id)).catch(() => new Map()),
+    readLatestRepositorySnapshots(repositories.map((repository) => repository.id)).catch(() => new Map())
+  ]);
+
+  return repositories.map((repository) => {
+    const traffic = trafficTotals.get(repository.id);
+    const snapshot = snapshots.get(repository.id);
+    return {
+      ...repository,
+      totalViews: traffic?.totalViews || 0,
+      totalClones: traffic?.totalClones || 0,
+      totalDownloads: snapshot?.totalDownloads ?? repository.totalDownloads,
+      latestRelease: snapshot?.latestRelease || repository.latestRelease,
+      lastSyncAt: snapshot?.snapshotDate || repository.lastSyncAt
+    };
+  });
 }
 
 async function applyPersistedTrafficTotals(repositories: RepositorySummary[]) {

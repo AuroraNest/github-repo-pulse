@@ -42,6 +42,12 @@ export type RepositoryRecordInput = {
   updatedAt: string;
 };
 
+export type LatestRepositorySnapshot = {
+  snapshotDate: string;
+  totalDownloads: number;
+  latestRelease: string | null;
+};
+
 type AppSettingsRow = RowDataPacket & {
   setup_completed: number | boolean;
   sync_enabled: number | boolean;
@@ -121,6 +127,13 @@ type RepositorySnapshotTrendRow = RowDataPacket & {
   stars_count: number;
   forks_count: number;
   total_release_downloads: number;
+};
+
+type LatestRepositorySnapshotRow = RowDataPacket & {
+  repository_id: string;
+  snapshot_date: Date | string;
+  total_release_downloads: number;
+  latest_release_tag: string | null;
 };
 
 type TrafficDailyTrendRow = RowDataPacket & {
@@ -625,6 +638,34 @@ export async function readRepositorySnapshotTrends(repositoryIds: string[], days
       views: 0,
       clones: 0
     }));
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function readLatestRepositorySnapshots(repositoryIds: string[]): Promise<Map<string, LatestRepositorySnapshot>> {
+  if (repositoryIds.length === 0) return new Map();
+
+  const pool = await createPool();
+  const placeholders = repositoryIds.map(() => "?").join(", ");
+  try {
+    const [rows] = await pool.query<LatestRepositorySnapshotRow[]>(
+      `SELECT snapshot.repository_id, snapshot.snapshot_date, snapshot.total_release_downloads, snapshot.latest_release_tag
+       FROM repository_snapshots snapshot
+       INNER JOIN (
+         SELECT repository_id, MAX(snapshot_date) AS snapshot_date
+         FROM repository_snapshots
+         WHERE repository_id IN (${placeholders})
+         GROUP BY repository_id
+       ) latest ON latest.repository_id = snapshot.repository_id AND latest.snapshot_date = snapshot.snapshot_date`,
+      repositoryIds
+    );
+
+    return new Map(rows.map((row) => [row.repository_id, {
+      snapshotDate: rowDateToDateOnly(row.snapshot_date),
+      totalDownloads: Number(row.total_release_downloads) || 0,
+      latestRelease: row.latest_release_tag
+    }]));
   } finally {
     await pool.end();
   }

@@ -13,7 +13,7 @@ type PageProps = {
 export default async function RepositoriesPage({ searchParams }: PageProps) {
   const { locale, t } = await getDictionary();
   const params = await searchParams;
-  const { source, repositories } = await getRepositoryCollection({ includeMetrics: true });
+  const { source, repositories } = await getRepositoryCollection({ includeStoredMetrics: true });
   const sourceDescription = isGitHubConfigurationRequired(source) ? t.common.githubConfigurationRequiredDescription : source.message;
   const trackedRepositories = repositories.filter((repo) => repo.tracked);
   const fastest = [...trackedRepositories].sort((a, b) => b.todayDownloads - a.todayDownloads || b.stars - a.stars)[0];
